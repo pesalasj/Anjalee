@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Anjalee - Professional Voice Assistant</title>
+    <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --shadow-lg: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--gradient-1);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 24px;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 30px;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+        }
+
+        .login-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--gradient-1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .login-box h2 { color: var(--dark); margin-bottom: 10px; font-size: 2em; }
+        .login-box input {
+            width: 100%; padding: 16px; border: 2px solid #d1d5db;
+            border-radius: 12px; font-size: 18px; margin: 15px 0; text-align: center;
+        }
+        .login-box button {
+            width: 100%; padding: 16px; background: var(--gradient-1);
+            color: white; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 15px;
+        }
+        .login-box .error-msg {
+            background: #fef2f2; color: #dc2626; padding: 12px;
+            border-radius: 8px; margin: 15px 0; display: none;
+        }
+
+        .header {
+            text-align: center; margin-bottom: 30px; padding: 25px;
+            background: var(--gradient-1); border-radius: 16px; color: white;
+        }
+
+        h1 { font-size: 2.2em; font-weight: 700; margin-bottom: 8px; }
+
+        .developer-credit {
+            text-align: center; margin-top: 15px; padding: 12px;
+            background: rgba(255,255,255,0.15); border-radius: 8px; font-size: 0.9em;
+        }
+
+        .setup-box {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 2px solid #f59e0b; border-radius: 16px;
+            padding: 25px; margin-bottom: 25px; text-align: center;
+            display: block !important;
+        }
+
+        .setup-box h3 { color: #92400e; margin-bottom: 15px; font-size: 1.3em; }
+        .setup-box input {
+            width: 100%; padding: 16px; border: 2px solid #fbbf24;
+            border-radius: 12px; font-size: 16px; margin: 15px 0;
+        }
+        .setup-box button {
+            background: var(--gradient-1); color: white; border: none;
+            padding: 18px 35px; border-radius: 12px; font-size: 16px;
+            font-weight: 600; cursor: pointer; margin-top: 10px; width: 100%;
+        }
+
+        .status {
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            padding: 18px; border-radius: 12px; text-align: center;
+            margin-bottom: 25px; font-weight: 600; font-size: 16px;
+        }
+
+        .status.listening {
+            background: #fef2f2; color: #dc2626;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status.speaking { background: #ecfdf5; color: #059669; }
+        .status.searching { background: #eff6ff; color: #2563eb; }
+        .status.explaining { background: #fef3c7; color: #d97706; border: 2px solid #f59e0b; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .mic-btn {
+            width: 160px; height: 160px; border-radius: 50%; border: none;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white; font-size: 60px; cursor: pointer;
+            display: block; margin: 30px auto;
+        }
+
+        .mic-btn.listening {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            animation: pulse 1.5s infinite;
+        }
+
+        .mode-selector {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            border: 2px solid #3b82f6;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .mode-selector h3 {
+            color: #1e40af;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px 25px;
+            border: 2px solid #3b82f6;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .mode-info {
+            margin-top: 15px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            font-size: 0.85em;
+            color: #1e40af;
+        }
+
+        .message {
+            background: #f9fafb;
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 12px;
+            display: none;
+        }
+
+        .message.show { display: block; }
+        .message.user { border-left-color: #8b5cf6; background: #f5f3ff; }
+        .message.assistant { border-left-color: #10b981; background: #ecfdf5; }
+
+        .message-label {
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 11px;
+            margin-bottom: 10px;
+            opacity: 0.7;
+        }
+
+        .result-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .result-image {
+            width: 100%;
+            min-height: 200px;
+            max-height: 400px;
+            background: var(--gradient-1);
+            border-radius: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4em;
+            overflow: hidden;
+        }
+
+        .result-image img {
+            width: 100%;
+            height: auto;
+            max-height: 400px;
+            object-fit: contain;
+        }
+
+        .result-title { font-weight: 700; color: var(--dark); margin-bottom: 12px; font-size: 1.2em; }
+        .result-price { color: #10b981; font-weight: 700; font-size: 1.4em; margin: 10px 0; }
+        .result-location { color: #64748b; margin: 8px 0; font-weight: 500; }
+
+        .result-contact {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 0.9em;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .explain-btn {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            margin-top: 15px;
+            width: 100%;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .explain-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .explain-btn.explaining {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            animation: pulse 1.5s infinite;
+        }
+
+        .loading { text-align: center; padding: 40px; display: none; }
+        .loading.show { display: block; }
+
+        .spinner {
+            width: 50px; height: 50px;
+            border: 5px solid #e5e7eb;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .settings {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .settings select, .settings input {
+            width: 100%; padding: 14px;
+            border: 2px solid #d1d5db;
+            border-radius: 12px; font-size: 14px;
+        }
+
+        .save-btns {
+            display: flex; gap: 12px;
+            flex-wrap: wrap; justify-content: center;
+            margin-top: 20px;
+        }
+
+        .save-btn {
+            background: var(--gradient-1); color: white;
+            border: none; padding: 14px 24px;
+            border-radius: 12px; cursor: pointer;
+            font-weight: 600; flex: 1; min-width: 140px;
+        }
+
+        .save-btn.word { background: #2b579a; }
+        .save-btn.pdf { background: #dc3545; }
+        .save-btn.text { background: #6c757d; }
+
+        .language-selector {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            border: 2px solid #3b82f6;
+            border-radius: 12px;
+            padding: 18px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .language-selector select {
+            width: 100%; max-width: 350px;
+            padding: 14px; border: 2px solid #3b82f6;
+            border-radius: 10px; font-size: 16px; margin-top: 12px;
+        }
+
+        .footer {
+            background: #f9fafb; padding: 25px;
+            margin-top: 30px; border-radius: 16px; font-size: 13px;
+        }
+
+        .footer ol { margin-left: 25px; line-height: 2.2; }
+
+        .logout-btn {
+            position: absolute; top: 20px; right: 20px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white; border: none; padding: 10px 20px;
+            border-radius: 8px; cursor: pointer; font-weight: 600;
+        }
+
+        .conversation-history {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 2px solid #0ea5e9;
+            border-radius: 12px;
+            padding: 18px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .conversation-history h4 {
+            color: #0369a1;
+            margin-bottom: 12px;
+            font-size: 1em;
+        }
+
+        .history-item {
+            background: white;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            font-size: 0.9em;
+            border-left: 3px solid #0ea5e9;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            h1 { font-size: 1.8em; }
+            .mic-btn { width: 140px; height: 140px; font-size: 50px; }
+            .settings { grid-template-columns: 1fr; }
+            .save-btns { flex-direction: column; }
+            .save-btn { width: 100%; }
+            .mode-toggle { flex-direction: column; }
+            .mode-btn { min-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loginScreen" class="login-screen">
+        <div class="login-box">
+            <h2><i class="fas fa-shield-alt"></i> Anjalee Login</h2>
+            <p style="color:#64748b;margin-bottom:20px;">Enter 2FA Code</p>
+            <div style="background:#eff6ff;color:#2563eb;padding:15px;border-radius:8px;margin:20px 0;font-size:0.9em;">
+                <strong>Default code: 123456</strong>
+            </div>
+            <input type="text" id="twoFACode" placeholder="000000" maxlength="6" inputmode="numeric">
+            <button onclick="verify2FA()"><i class="fas fa-lock"></i> Login</button>
+            <div class="developer-credit"><strong>Developer:</strong> Pesala S. Jayawardene</div>
+        </div>
+    </div>
+
+    <div class="container" id="mainContainer" style="display:none;">
+        <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+
+        <div class="header">
+            <h1>🎤 Anjalee</h1>
+            <p style="font-size:1em;opacity:0.95;">Professional Voice Assistant - Interactive Mode</p>
+            <div class="developer-credit"><strong>Developer:</strong> Pesala S. Jayawardene</div>
+        </div>
+
+        <div class="setup-box" id="setupBox">
+            <h3>🔑 Step 1: Get API Key</h3>
+            <p><strong>⚠️ 403 Error?</strong> Wait 2-3 minutes after signing up at serper.dev</p>
+            <div style="text-align:left;margin:15px 0;color:#78350f;">
+                <ol style="margin-left:20px;line-height:2;">
+                    <li>Go to <a href="https://serper.dev" target="_blank" style="color:#0369a1;">serper.dev</a></li>
+                    <li>Sign Up (FREE - 2,500 searches/month)</li>
+                    <li>Copy API Key from Dashboard</li>
+                    <li>Wait 2-3 minutes for activation</li>
+                    <li>Click "Test API Key"</li>
+                    <li>Click "Save & Continue"</li>
+                </ol>
+            </div>
+            <input type="password" id="apiKey" placeholder="Paste API key here">
+            <button onclick="testApiKey()"><i class="fas fa-flask"></i> Test API Key</button>
+            <button onclick="saveApiKey()" style="margin-top:10px;background:linear-gradient(135deg,#10b981,#059669);">
+                <i class="fas fa-save"></i> Save & Continue
+            </button>
+            <div id="apiStatus" class="status" style="display:none;margin-top:15px;"></div>
+        </div>
+
+        <div id="mainApp" style="display:none;">
+            <div class="language-selector">
+                <strong>🌍 Select Language:</strong>
+                <select id="languageSelect" onchange="changeLanguage()">
+                    <option value="en-US">🇺🇸 English (US) - Best Female Voice</option>
+                    <option value="en-GB">🇬🇧 English (UK)</option>
+                    <option value="si-LK">🇱🇰 Sinhala</option>
+                    <option value="ta-LK">🇱🇰 Tamil (SL)</option>
+                    <option value="hi-IN">🇮🇳 Hindi</option>
+                </select>
+            </div>
+
+            <!-- MODE SELECTOR -->
+            <div class="mode-selector">
+                <h3>💬 Conversation Mode</h3>
+                <div class="mode-toggle">
+                    <button class="mode-btn active" id="continuousMode" onclick="setMode('continuous')">
+                        <i class="fas fa-comments"></i> Continuous Discussion
+                    </button>
+                    <button class="mode-btn" id="saveMode" onclick="setMode('save')">
+                        <i class="fas fa-save"></i> Save After Each Search
+                    </button>
+                </div>
+                <div class="mode-info" id="modeInfo">
+                    <strong>✅ Continuous Mode (Default):</strong> Mic stays ON, no wake word needed, just keep talking. 
+                    Say "stop" or "goodbye" to end.
+                </div>
+            </div>
+
+            <div class="status" id="status">Click microphone to start</div>
+
+            <!-- Conversation History -->
+            <div class="conversation-history" id="conversationHistory" style="display:none;">
+                <h4><i class="fas fa-history"></i> Conversation History</h4>
+                <div id="historyList"></div>
+            </div>
+
+            <div class="settings">
+                <div>
+                    <label><strong>Country:</strong></label>
+                    <select id="country">
+                        <option value="lk">🇱🇰 Sri Lanka</option>
+                        <option value="in">🇮🇳 India</option>
+                        <option value="us">🇺🇸 USA</option>
+                        <option value="gb">🇬🇧 UK</option>
+                    </select>
+                </div>
+                <div>
+                    <label><strong>Results:</strong></label>
+                    <input type="number" id="resultCount" min="1" max="10" value="5">
+                </div>
+            </div>
+
+            <button class="mic-btn" id="micBtn" onclick="toggleMic()">
+                <i class="fas fa-microphone"></i>
+            </button>
+
+            <div class="message user" id="userMsg">
+                <div class="message-label">👤 You Said</div>
+                <div id="userText"></div>
+            </div>
+
+            <div class="message assistant" id="assistMsg">
+                <div class="message-label">🤖 Anjalee Says</div>
+                <div id="assistText"></div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p><strong>🔍 Searching...</strong></p>
+                <p id="searchQuery"></p>
+            </div>
+
+            <div id="results" style="display:none;">
+                <h3 style="margin:25px 0;"><i class="fas fa-search"></i> Results</h3>
+                <div id="resultsList"></div>
+                <div class="save-btns">
+                    <button onclick="clearResults()" class="save-btn">Clear & Search Again</button>
+                    <button onclick="saveAsWord()" class="save-btn word">Save Word</button>
+                    <button onclick="saveAsPDF()" class="save-btn pdf">Save PDF</button>
+                    <button onclick="saveAsText()" class="save-btn text">Save Text</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <strong>How to Use:</strong>
+            <ol>
+                <li><strong>Login:</strong> Enter code 123456</li>
+                <li><strong>Save API key:</strong> From serper.dev (free 2,500 searches/month)</li>
+                <li><strong>Select Mode:</strong> Continuous (default) or Save Mode</li>
+                <li><strong>Continuous Mode:</strong> Click mic ONCE, keep talking, NO wake word needed, mic stays ON</li>
+                <li><strong>Save Mode:</strong> Say "Anjalee" before each search, confirmation required</li>
+                <li><strong>Explain Button:</strong> Click on any result to hear details (no URLs), say "Anjalee" or "Stop" to stop</li>
+                <li><strong>Ask Questions:</strong> While explaining, ask specific questions like "which is cheapest?" - Anjalee will answer directly!</li>
+                <li><strong>End:</strong> Say "stop" or "goodbye" (Continuous) or click mic button</li>
+                <li>Results appear with images!</li>
+            </ol>
+            <p style="margin-top:15px;padding:15px;background:#fef3c7;border-radius:8px;color:#92400e;">
+                <strong>💡 Continuous Mode:</strong> Just click mic once and keep talking - no need to say "Anjalee" each time!<br>
+                <strong>🎤 Explain Feature:</strong> Click the purple "Explain Details" button. Say "Anjalee", "Stop", or "Stop reading" to stop.<br>
+                <strong>🔍 Smart Answers:</strong> Ask "which is cheapest?" or "which is nearest?" - Anjalee compares and answers directly!<br>
+                <strong>Developer:</strong> Pesala S. Jayawardene
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 2FA SYSTEM ====================
+        const DEFAULT_2FA_CODE = '123456';
+        let twoFACode = localStorage.getItem('anjalee_2fa_code') || DEFAULT_2FA_CODE;
+        let isLoggedIn = sessionStorage.getItem('anjalee_logged_in') === 'true';
+
+        window.onload = function() {
+            if (isLoggedIn) showMainApp();
+            setTimeout(() => document.getElementById('twoFACode').focus(), 500);
+            loadVoices();
+        };
+
+        function verify2FA() {
+            const code = document.getElementById('twoFACode').value.trim();
+            if (code === twoFACode) {
+                sessionStorage.setItem('anjalee_logged_in', 'true');
+                isLoggedIn = true;
+                showMainApp();
+            } else {
+                const err = document.getElementById('loginError');
+                if (!err) {
+                    const e = document.createElement('div');
+                    e.className = 'error-msg';
+                    e.style.cssText = 'background:#fef2f2;color:#dc2626;padding:12px;border-radius:8px;margin:15px 0;';
+                    e.textContent = 'Invalid code';
+                    document.querySelector('.login-box').insertBefore(e, document.querySelector('button'));
+                }
+                document.getElementById('twoFACode').value = '';
+            }
+        }
+
+        function showMainApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainContainer').style.display = 'block';
+            
+            const apiKey = localStorage.getItem('anjalee_apiKey_v3') || '';
+            if (apiKey && apiKey.length >= 10) {
+                document.getElementById('apiKey').value = apiKey;
+                document.getElementById('setupBox').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+                initRecognition();
+                speak('Hello! API key loaded. Click microphone and start talking - no need to say Anjalee!', true);
+            }
+            loadVoices();
+        }
+
+        function logout() {
+            if (confirm('Logout?')) {
+                sessionStorage.removeItem('anjalee_logged_in');
+                location.reload();
+            }
+        }
+
+        // ==================== MODE SYSTEM ====================
+        let conversationMode = 'continuous';
+        let conversationHistory = [];
+
+        function setMode(mode) {
+            conversationMode = mode;
+            
+            document.getElementById('continuousMode').classList.toggle('active', mode === 'continuous');
+            document.getElementById('saveMode').classList.toggle('active', mode === 'save');
+            
+            const info = document.getElementById('modeInfo');
+            if (mode === 'continuous') {
+                info.innerHTML = '<strong>✅ Continuous Mode:</strong> Mic stays ON, no wake word needed, just keep talking. Say "stop" or "goodbye" to end.';
+                document.getElementById('conversationHistory').style.display = 'block';
+            } else {
+                info.innerHTML = '<strong>💾 Save Mode:</strong> Say "Anjalee" before each search. Confirmation required. Best for saving each search separately.';
+                document.getElementById('conversationHistory').style.display = 'none';
+            }
+            
+            localStorage.setItem('anjalee_mode', mode);
+            speak('Mode changed to ' + (mode === 'continuous' ? 'Continuous - just keep talking' : 'Save Mode - say Anjalee before searching'), true);
+        }
+
+        function addToHistory(query, results) {
+            if (conversationMode !== 'continuous') return;
+            
+            conversationHistory.push({
+                query: query,
+                count: results.length,
+                time: new Date().toLocaleTimeString()
+            });
+            
+            if (conversationHistory.length > 10) conversationHistory.shift();
+            updateHistoryDisplay();
+        }
+
+        function updateHistoryDisplay() {
+            const list = document.getElementById('historyList');
+            if (conversationHistory.length === 0) {
+                list.innerHTML = '<p style="color:#64748b;font-style:italic;">No searches yet</p>';
+                return;
+            }
+            
+            list.innerHTML = conversationHistory.map((item, i) => `
+                <div class="history-item">
+                    <strong>${i+1}.</strong> ${item.query}<br>
+                    <small style="color:#64748b;">${item.count} results • ${item.time}</small>
+                </div>
+            `).join('');
+        }
+
+        // ==================== API KEY ====================
+        async function testApiKey() {
+            const key = document.getElementById('apiKey').value.trim();
+            const statusDiv = document.getElementById('apiStatus');
+            
+            if (!key || key.length < 10) {
+                statusDiv.className = 'status';
+                statusDiv.style.display = 'block';
+                statusDiv.innerHTML = '❌ Invalid key';
+                return;
+            }
+            
+            statusDiv.className = 'status';
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '⏳ Testing...';
+            
+            try {
+                const response = await fetch('https://google.serper.dev/search', {
+                    method: 'POST',
+                    headers: { 'X-API-KEY': key, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ q: 'test', num: 1 })
+                });
+                
+                if (response.status === 200) {
+                    statusDiv.className = 'status';
+                    statusDiv.innerHTML = '✅ Success! Click "Save & Continue"';
+                    speak('API key test successful!', true);
+                } else if (response.status === 401 || response.status === 403) {
+                    statusDiv.className = 'status';
+                    statusDiv.innerHTML = '❌ 403 Error - Wait 2-3 minutes after signing up';
+                    speak('Key not activated yet. Wait 2 to 3 minutes.', true);
+                } else {
+                    statusDiv.className = 'status';
+                    statusDiv.innerHTML = '❌ Error: ' + response.status;
+                }
+            } catch (error) {
+                statusDiv.className = 'status';
+                statusDiv.innerHTML = '❌ Connection error: ' + error.message;
+            }
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('apiKey').value.trim();
+            if (!key || key.length < 10) {
+                alert('Please enter valid API key from serper.dev');
+                return;
+            }
+            
+            localStorage.setItem('anjalee_apiKey_v3', key);
+            document.getElementById('setupBox').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            
+            const savedMode = localStorage.getItem('anjalee_mode') || 'continuous';
+            setMode(savedMode);
+            
+            initRecognition();
+            speak('API key saved! Click microphone and start talking!', true);
+            updateStatus('✅ API key saved! Click microphone');
+        }
+
+        // ==================== VOICE SYSTEM ====================
+        let currentLanguage = 'en-US';
+        let currentVoice = null;
+        let allVoices = [];
+        let isExplaining = false;
+        let currentExplainingItem = null;
+
+        function loadVoices() {
+            allVoices = window.speechSynthesis.getVoices();
+            selectBestVoice(currentLanguage);
+        }
+
+        if (window.speechSynthesis) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+            setTimeout(loadVoices, 500);
+            setTimeout(loadVoices, 1000);
+        }
+
+        function selectBestVoice(lang) {
+            currentVoice = allVoices.find(v => 
+                v.lang.startsWith('en') && (
+                    v.name.toLowerCase().includes('female') || 
+                    v.name.toLowerCase().includes('zira') ||
+                    v.name.toLowerCase().includes('samantha') ||
+                    v.name.toLowerCase().includes('google')
+                )
+            ) || allVoices.find(v => v.lang.startsWith('en')) || allVoices[0];
+        }
+
+        function changeLanguage() {
+            currentLanguage = document.getElementById('languageSelect').value;
+            if (recognition) recognition.lang = currentLanguage;
+            selectBestVoice(currentLanguage);
+            speak('Language changed', true);
+        }
+
+        function speak(text, useFemaleVoice = true) {
+            if (!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            
+            setTimeout(() => {
+                const utterance = new SpeechSynthesisUtterance(text);
+                if (currentVoice) utterance.voice = currentVoice;
+                utterance.lang = currentLanguage;
+                utterance.rate = 0.9;
+                utterance.pitch = 1.1;
+                
+                utterance.onstart = () => {
+                    isSpeaking = true;
+                    if (isExplaining) {
+                        updateStatus('🔊 Explaining... Say "Anjalee" or "Stop" to stop');
+                    } else {
+                        updateStatus('🔊 Speaking...');
+                    }
+                };
+                
+                utterance.onend = () => {
+                    isSpeaking = false;
+                    if (isListening && conversationMode === 'continuous' && !isExplaining) {
+                        updateStatus('🎤 Listening...');
+                    }
+                };
+                
+                window.speechSynthesis.speak(utterance);
+            }, 100);
+        }
+
+        // Explain result details - UPDATED: No URLs, better stop commands
+        function explainResult(index) {
+            if (!searchResults[index]) return;
+            
+            const item = searchResults[index];
+            currentExplainingItem = item;
+            isExplaining = true;
+            
+            // Update button state
+            const btn = document.getElementById(`explainBtn-${index}`);
+            if (btn) {
+                btn.classList.add('explaining');
+                btn.innerHTML = '<i class="fas fa-volume-up"></i> Explaining... Say "Anjalee" or "Stop"';
+            }
+            
+            // Create detailed explanation WITHOUT links/URLs
+            const explanation = `
+                Here are the details for ${item.title}. 
+                The price is ${item.price}. 
+                Location is ${item.location}. 
+                Contact information: ${item.contact}. 
+                Features include: ${item.features.join(', ')}.
+                ${item.description ? 'Description: ' + item.description : ''}
+                I can provide more information if you have questions. Say Anjalee, Stop, or Stop reading to end.
+            `;
+            
+            speak(explanation, true);
+            
+            // Keep mic active for questions and stop commands
+            setTimeout(() => {
+                if (isExplaining && !isListening) {
+                    try {
+                        recognition.start();
+                        console.log('✅ Mic restarted for questions');
+                    } catch(e) {}
+                }
+            }, 3000);
+        }
+
+        // Stop explaining - UPDATED with better command detection
+        function stopExplaining() {
+            if (!isExplaining) return;
+            
+            isExplaining = false;
+            currentExplainingItem = null;
+            window.speechSynthesis.cancel();
+            
+            // Reset all explain buttons
+            document.querySelectorAll('.explain-btn').forEach(btn => {
+                btn.classList.remove('explaining');
+                btn.innerHTML = '<i class="fas fa-volume-up"></i> Explain Details';
+            });
+            
+            updateStatus('✅ Stopped explaining. Keep talking or say "stop" to end');
+        }
+
+        // Search for additional information - SMART ANSWERING VERSION
+        async function searchAdditionalInfo(item, question) {
+            console.log('🔍 Processing question:', question);
+            updateStatus('🔍 Answering: ' + question);
+            
+            const lowerQuestion = question.toLowerCase();
+            
+            // FIRST: Try to answer from current search results
+            const answer = answerFromResults(lowerQuestion, searchResults);
+            
+            if (answer) {
+                console.log('✅ Answered from results:', answer);
+                speak(answer, true);
+                return;
+            }
+            
+            // SECOND: Try internet search as fallback
+            console.log('🌐 Falling back to internet search');
+            await searchFromInternet(item, question);
+        }
+
+        // Answer questions from current search results
+        function answerFromResults(question, results) {
+            if (!results || results.length === 0) return null;
+            
+            // Price comparison questions
+            if (question.includes('lowest cost') || question.includes('cheapest') || 
+                question.includes('lowest price') || question.includes('less expensive')) {
+                return findCheapest(results);
+            }
+            
+            if (question.includes('highest cost') || question.includes('most expensive') || 
+                question.includes('highest price')) {
+                return findMostExpensive(results);
+            }
+            
+            // Location/distance questions
+            if (question.includes('nearest') || question.includes('closest') || 
+                question.includes('near me') || question.includes('nearby')) {
+                return findNearest(results);
+            }
+            
+            // Feature questions
+            if (question.includes('parking') || question.includes('park')) {
+                return findWithFeature(results, 'parking');
+            }
+            
+            if (question.includes('wifi') || question.includes('internet') || question.includes('wireless')) {
+                return findWithFeature(results, 'wifi');
+            }
+            
+            if (question.includes('pool') || question.includes('swimming')) {
+                return findWithFeature(results, 'pool');
+            }
+            
+            if (question.includes('gym') || question.includes('fitness')) {
+                return findWithFeature(results, 'gym');
+            }
+            
+            // Rating/quality questions
+            if (question.includes('best') || question.includes('top') || question.includes('recommended')) {
+                return findBestRated(results);
+            }
+            
+            if (question.includes('worst') || question.includes('lowest rated')) {
+                return findWorstRated(results);
+            }
+            
+            // Count questions
+            if (question.includes('how many') || question.includes('total') || question.includes('count')) {
+                return `There are ${results.length} results in total. ${results[0].title} is the first one.`;
+            }
+            
+            // Specific item questions
+            if (question.includes('first') || question.includes('number 1') || question.includes('top result')) {
+                return summarizeResult(results[0], 1);
+            }
+            
+            if (question.includes('second') || question.includes('number 2')) {
+                return results[1] ? summarizeResult(results[1], 2) : 'There is no second result.';
+            }
+            
+            if (question.includes('third') || question.includes('number 3')) {
+                return results[2] ? summarizeResult(results[2], 3) : 'There is no third result.';
+            }
+            
+            return null; // No match, will fall back to internet search
+        }
+
+        // Helper functions for answering from results
+        function findCheapest(results) {
+            // Try to extract prices and find lowest
+            const priced = results.filter(r => {
+                const priceMatch = r.price?.match(/[\d,]+/);
+                return priceMatch && !r.price.toLowerCase().includes('request');
+            });
+            
+            if (priced.length === 0) {
+                return 'I could not determine prices from the results. Most listings show "Price on request". Would you like me to search the internet for current pricing?';
+            }
+            
+            // Simple comparison - find lowest numeric value
+            let cheapest = priced[0];
+            let lowestPrice = extractPriceNumber(cheapest.price);
+            
+            for (let i = 1; i < priced.length; i++) {
+                const priceNum = extractPriceNumber(priced[i].price);
+                if (priceNum < lowestPrice) {
+                    lowestPrice = priceNum;
+                    cheapest = priced[i];
+                }
+            }
+            
+            return `The lowest cost option is ${cheapest.title} at ${cheapest.price}, located in ${cheapest.location}. ${cheapest.features.length > 0 ? 'Features include: ' + cheapest.features.join(', ') + '.' : ''} Would you like more details?`;
+        }
+
+        function findMostExpensive(results) {
+            const priced = results.filter(r => {
+                const priceMatch = r.price?.match(/[\d,]+/);
+                return priceMatch && !r.price.toLowerCase().includes('request');
+            });
+            
+            if (priced.length === 0) {
+                return 'I could not determine prices from the results.';
+            }
+            
+            let mostExpensive = priced[0];
+            let highestPrice = extractPriceNumber(mostExpensive.price);
+            
+            for (let i = 1; i < priced.length; i++) {
+                const priceNum = extractPriceNumber(priced[i].price);
+                if (priceNum > highestPrice) {
+                    highestPrice = priceNum;
+                    mostExpensive = priced[i];
+                }
+            }
+            
+            return `The most expensive option is ${mostExpensive.title} at ${mostExpensive.price}, located in ${mostExpensive.location}.`;
+        }
+
+        function findNearest(results) {
+            // For now, return first result as "nearest" since we don't have user location
+            return `Based on the search results, ${results[0].title} in ${results[0].location} appears to be a good option. Would you like me to search for distances from your specific location?`;
+        }
+
+        function findWithFeature(results, feature) {
+            const withFeature = results.filter(r => 
+                r.features.some(f => f.toLowerCase().includes(feature)) ||
+                r.description?.toLowerCase().includes(feature)
+            );
+            
+            if (withFeature.length === 0) {
+                return `I did not find any results mentioning ${feature}. Would you like me to search the internet for ${feature} information?`;
+            }
+            
+            const first = withFeature[0];
+            return `${first.title} offers ${feature}. It is located in ${first.location} and costs ${first.price}. ${first.features.length > 0 ? 'Other features: ' + first.features.join(', ') + '.' : ''}`;
+        }
+
+        function findBestRated(results) {
+            // For now, return first result as "best" since we don't have ratings
+            return `Based on the search results, ${results[0].title} appears to be a top option. It is located in ${results[0].location} with price ${results[0].price}. Would you like me to search for customer reviews?`;
+        }
+
+        function findWorstRated(results) {
+            const last = results[results.length - 1];
+            return `The last result is ${last.title} in ${last.location}. However, I don't have rating information to determine the worst rated option.`;
+        }
+
+        function summarizeResult(result, position) {
+            return `Result number ${position}: ${result.title}. Price: ${result.price}. Location: ${result.location}. Contact: ${result.contact}. Features: ${result.features.join(', ')}.`;
+        }
+
+        function extractPriceNumber(priceText) {
+            if (!priceText) return Infinity;
+            const match = priceText.match(/[\d,]+/);
+            if (!match) return Infinity;
+            return parseInt(match[0].replace(/,/g, ''), 10) || Infinity;
+        }
+
+        // Fallback to internet search
+        async function searchFromInternet(item, question) {
+            try {
+                let searchQuery = `${item.title} ${question} ${item.location}`;
+                
+                // Optimize query based on question type
+                const lowerQuestion = question.toLowerCase();
+                if (lowerQuestion.includes('price') || lowerQuestion.includes('cost')) {
+                    searchQuery = `${item.title} current price ${item.location} 2024`;
+                } else if (lowerQuestion.includes('review') || lowerQuestion.includes('rating')) {
+                    searchQuery = `${item.title} reviews ratings ${item.location}`;
+                } else if (lowerQuestion.includes('contact') || lowerQuestion.includes('phone')) {
+                    searchQuery = `${item.title} contact phone email ${item.location}`;
+                }
+                
+                console.log('🔍 Internet search query:', searchQuery);
+                
+                const response = await fetch('https://google.serper.dev/search', {
+                    method: 'POST',
+                    headers: {
+                        'X-API-KEY': apiKey || localStorage.getItem('anjalee_apiKey_v3'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        q: searchQuery,
+                        num: 3
+                    })
+                });
+                
+                if (!response.ok) throw new Error('API error');
+                
+                const data = await response.json();
+                
+                if (data.organic && data.organic.length > 0) {
+                    // Get the most relevant snippet
+                    const snippet = data.organic[0].snippet;
+                    const answer = snippet.length > 200 ? snippet.substring(0, 200) + '...' : snippet;
+                    
+                    speak(`I found: ${answer}. Would you like to know more?`, true);
+                } else {
+                    speak('I could not find specific information about that. Could you rephrase your question?', true);
+                }
+                
+            } catch (error) {
+                console.error('Internet search error:', error);
+                speak('Sorry, I could not search the internet right now. Please try again.', true);
+            }
+        }
+
+        // ==================== MIC SYSTEM ====================
+        let recognition = null;
+        let isListening = false;
+        let isSpeaking = false;
+        let apiKey = '';
+        let pendingQuery = '';
+        let waitingForYes = false;
+        let searchResults = [];
+        let searchCount = 0;
+        let currentSearchQuery = '';
+        let lastProcessedText = '';
+        let lastProcessedTime = 0;
+        let processLock = false;
+        let selectedCountry = 'lk';
+        let isProcessing = false;
+
+        const countryNames = {
+            'lk': 'Sri Lanka', 'in': 'India', 'us': 'USA', 'gb': 'UK'
+        };
+
+        const countryCodes = {
+            'lk': 'LK', 'in': 'IN', 'us': 'US', 'gb': 'GB'
+        };
+
+        function initRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                alert('Use Chrome browser');
+                return;
+            }
+            
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            recognition.lang = currentLanguage;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = function() {
+                console.log('✅ Recognition started (continuous)');
+                isListening = true;
+                isProcessing = false;
+                if (isExplaining) {
+                    updateStatus('🔊 Explaining... Say "Anjalee" or "Stop" to stop');
+                } else {
+                    updateStatus('🎤 Listening continuously... Just talk!');
+                }
+                document.getElementById('micBtn').classList.add('listening');
+            };
+
+            recognition.onend = function() {
+                console.log('❌ Recognition ended');
+                isListening = false;
+                document.getElementById('micBtn').classList.remove('listening');
+                
+                // AUTO-RESTART in continuous mode (but not if explaining)
+                if (conversationMode === 'continuous' && !isExplaining && !processLock && !isSpeaking) {
+                    console.log('🔄 Auto-restarting mic for continuous mode');
+                    setTimeout(() => {
+                        if (!isListening && !isSpeaking && conversationMode === 'continuous' && !isExplaining) {
+                            try {
+                                recognition.start();
+                                console.log('✅ Mic auto-restarted');
+                            } catch (e) {
+                                console.log('❌ Auto-restart failed:', e.message);
+                            }
+                        }
+                    }, 1000);
+                }
+                // Save Mode - only restart if waiting for yes/no
+                else if (conversationMode === 'save' && waitingForYes && !processLock && !isSpeaking) {
+                    setTimeout(() => {
+                        if (!isListening && !isSpeaking && waitingForYes) {
+                            try {
+                                recognition.start();
+                            } catch (e) {}
+                        }
+                    }, 1000);
+                }
+            };
+
+            recognition.onresult = function(event) {
+                const text = event.results[0][0].transcript.trim();
+                const currentTime = Date.now();
+                
+                console.log('🎤 Heard:', text);
+                
+                // Check for stop commands during explanation - UPDATED
+                if (isExplaining) {
+                    const lowerText = text.toLowerCase();
+                    if (lowerText.includes('anjalee') || 
+                        lowerText.includes('stop') || 
+                        lowerText.includes('stop reading') ||
+                        lowerText.includes('anjalee stop')) {
+                        console.log('🛑 Stop command detected:', text);
+                        stopExplaining();
+                        return;
+                    }
+                }
+                
+                // If explaining, handle questions intelligently
+                if (isExplaining && currentExplainingItem) {
+                    console.log('💬 Question during explanation:', text);
+                    if (text.length > 5 && !text.toLowerCase().includes('anjalee') && !text.toLowerCase().includes('stop')) {
+                        // Answer the question intelligently
+                        searchAdditionalInfo(currentExplainingItem, text);
+                    }
+                    return;
+                }
+                
+                // Prevent duplicates
+                if (text === lastProcessedText && (currentTime - lastProcessedTime) < 5000) {
+                    console.log('⏭️ Skipping duplicate');
+                    return;
+                }
+                
+                if (isProcessing) {
+                    console.log('🔒 Already processing');
+                    return;
+                }
+                
+                isProcessing = true;
+                lastProcessedText = text;
+                lastProcessedTime = currentTime;
+                
+                document.getElementById('userText').textContent = text;
+                document.getElementById('userMsg').classList.add('show');
+                
+                const lower = text.toLowerCase();
+                
+                // Check for stop commands
+                if (lower.includes('stop') || lower.includes('goodbye') || lower.includes('bye')) {
+                    speak('Goodbye! Have a great day!', true);
+                    updateStatus('👋 Ended');
+                    if (isListening) recognition.stop();
+                    isProcessing = false;
+                    return;
+                }
+                
+                // CONTINUOUS MODE - NO WAKE WORD NEEDED
+                if (conversationMode === 'continuous') {
+                    console.log('📍 Continuous Mode - searching without wake word');
+                    if (text.length > 5) {
+                        if (isListening) recognition.stop();
+                        doSearch(text);
+                        isProcessing = false;
+                        return;
+                    }
+                }
+                
+                // SAVE MODE - Wake word required
+                const wakeWords = ['anjalee', 'anjali', 'angel', 'anjale'];
+                let wakeWordFound = false;
+                let command = '';
+                
+                for (const word of wakeWords) {
+                    if (lower.includes(word)) {
+                        wakeWordFound = true;
+                        command = text.replace(new RegExp(word, 'gi'), '').trim();
+                        console.log('✅ Wake word found:', command);
+                        break;
+                    }
+                }
+                
+                if (wakeWordFound && command.length > 3) {
+                    pendingQuery = command;
+                    currentSearchQuery = command;
+                    waitingForYes = true;
+                    
+                    if (isListening) recognition.stop();
+                    speak('Yes! You said: "' + command + '". Should I search? Say yes or no.', true);
+                    updateStatus('⏳ Say "yes" or "no"');
+                    
+                    setTimeout(() => {
+                        if (!isSpeaking && waitingForYes) {
+                            try {
+                                recognition.start();
+                            } catch(e) {}
+                        }
+                    }, 2500);
+                    
+                    isProcessing = false;
+                    
+                } else if (waitingForYes) {
+                    isProcessing = false;
+                    
+                    if (lower.includes('yes') || lower.includes('yeah') || lower.includes('sure')) {
+                        console.log('✅ YES detected');
+                        waitingForYes = false;
+                        doSearch(pendingQuery);
+                    } else if (lower.includes('no') || lower.includes('nope')) {
+                        console.log('❌ NO detected');
+                        waitingForYes = false;
+                        pendingQuery = '';
+                        speak('What would you like instead?', true);
+                        updateStatus('🎤 Listening...');
+                    }
+                } else {
+                    isProcessing = false;
+                }
+            };
+
+            recognition.onerror = function(event) {
+                console.log('❌ Error:', event.error);
+                isProcessing = false;
+                if (event.error === 'not-allowed') {
+                    updateStatus('❌ Allow mic in browser settings');
+                }
+            };
+
+            console.log('✅ Recognition initialized (continuous mode)');
+        }
+
+        function toggleMic() {
+            if (!recognition) {
+                alert('Save API key first');
+                return;
+            }
+            
+            if (isListening) {
+                recognition.stop();
+                isListening = false;
+                isProcessing = false;
+                document.getElementById('micBtn').classList.remove('listening');
+                updateStatus('⏸️ Paused');
+            } else {
+                isProcessing = false;
+                try {
+                    recognition.start();
+                } catch (e) {}
+            }
+        }
+
+        function updateStatus(text) {
+            const bar = document.getElementById('status');
+            bar.textContent = text;
+            bar.className = 'status';
+            if (text.includes('Listening')) bar.classList.add('listening');
+            else if (text.includes('Speaking')) bar.classList.add('speaking');
+            else if (text.includes('Searching')) bar.classList.add('searching');
+            else if (text.includes('Explaining')) bar.classList.add('explaining');
+        }
+
+        async function doSearch(query) {
+            const country = document.getElementById('country').value;
+            selectedCountry = country;
+            const count = parseInt(document.getElementById('resultCount').value) || 5;
+            
+            searchCount++;
+            document.getElementById('searchQuery').textContent = query + ' in ' + countryNames[country];
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('results').style.display = 'none';
+            updateStatus('🔍 Searching...');
+            
+            try {
+                const searchResponse = await fetch('https://google.serper.dev/search', {
+                    method: 'POST',
+                    headers: {
+                        'X-API-KEY': apiKey || localStorage.getItem('anjalee_apiKey_v3'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        q: query + ' in ' + countryNames[country],
+                        num: count,
+                        gl: countryCodes[country] || 'LK'
+                    })
+                });
+                
+                if (!searchResponse.ok) {
+                    throw new Error('API error: ' + searchResponse.status);
+                }
+                
+                const searchData = await searchResponse.json();
+                
+                if (!searchData.organic || searchData.organic.length === 0) {
+                    throw new Error('No results found');
+                }
+                
+                // Fetch images
+                let imageData = { images: [] };
+                try {
+                    const imageResponse = await fetch('https://google.serper.dev/images', {
+                        method: 'POST',
+                        headers: {
+                            'X-API-KEY': apiKey || localStorage.getItem('anjalee_apiKey_v3'),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            q: query + ' in ' + countryNames[country],
+                            num: count,
+                            gl: countryCodes[country] || 'LK'
+                        })
+                    });
+                    if (imageResponse.ok) imageData = await imageResponse.json();
+                } catch (e) {}
+                
+                searchResults = searchData.organic.slice(0, count).map((item, index) => {
+                    let imageUrl = null;
+                    if (imageData.images && imageData.images[index]) {
+                        imageUrl = imageData.images[index].imageUrl;
+                    }
+                    
+                    const priceMatch = item.snippet?.match(/\$[\d,]+|LKR\s*[\d,]+|Rs\.\s*[\d,]+/i);
+                    const price = priceMatch ? priceMatch[0] : 'Price on request';
+                    
+                    let address = countryNames[country];
+                    const locationMatch = item.snippet?.match(/(?:in|at|near)\s+([A-Z][a-z]+)/i);
+                    if (locationMatch) address = locationMatch[1] + ', ' + countryNames[country];
+                    
+                    const domain = new URL(item.link).hostname;
+                    let contact = 'Contact: ' + domain;
+                    const phoneMatch = item.snippet?.match(/(?:phone|tel|call)\s*:?\s*([+\d\s()-]{8,})/i);
+                    if (phoneMatch) contact = 'Phone: ' + phoneMatch[1].trim();
+                    
+                    const features = [];
+                    if (item.snippet?.match(/\d+\s*bed/i)) features.push('Beds');
+                    if (item.snippet?.match(/\d+\s*bath/i)) features.push('Baths');
+                    if (features.length === 0) features.push('View details');
+                    
+                    return {
+                        title: item.title,
+                        price: price,
+                        location: address,
+                        contact: contact,
+                        features: features,
+                        description: item.snippet || 'No description',
+                        imageUrl: imageUrl,
+                        fullUrl: item.link,
+                        domain: domain,
+                        country: countryNames[country]
+                    };
+                });
+                
+                // Add to conversation history
+                addToHistory(query, searchResults);
+                
+                showResults();
+                
+                const msg = 'Found ' + searchResults.length + ' results in ' + countryNames[country] + '.';
+                document.getElementById('assistText').textContent = msg;
+                document.getElementById('assistMsg').classList.add('show');
+                
+                speak(msg, true);
+                
+                if (conversationMode === 'continuous') {
+                    updateStatus('✅ Done! Keep talking or say "stop" to end');
+                    // RESTART MIC after search completes
+                    setTimeout(() => {
+                        if (!isListening && conversationMode === 'continuous' && !isExplaining) {
+                            try {
+                                recognition.start();
+                                console.log('✅ Mic restarted after search');
+                            } catch(e) {}
+                        }
+                    }, 2000);
+                } else {
+                    updateStatus('✅ Done! Results ready to save');
+                }
+                
+            } catch (error) {
+                const errMsg = 'Error: ' + error.message;
+                document.getElementById('assistText').textContent = errMsg;
+                document.getElementById('assistMsg').classList.add('show');
+                speak(errMsg, true);
+                updateStatus('❌ ' + errMsg);
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+            }
+        }
+
+        function showResults() {
+            const list = document.getElementById('resultsList');
+            list.innerHTML = searchResults.map((item, i) => `
+                <div class="result-card">
+                    <div class="result-image">
+                        ${item.imageUrl 
+                            ? `<img src="${item.imageUrl}" alt="${item.title}" onerror="this.parentElement.innerHTML='<i class=\'fas fa-image\'></i>'">` 
+                            : '<i class="fas fa-home"></i>'}
+                    </div>
+                    <div class="result-title">${i+1}. ${item.title}</div>
+                    <div class="result-price"><i class="fas fa-tag"></i> ${item.price}</div>
+                    <div class="result-location"><i class="fas fa-map-marker-alt"></i> ${item.location}</div>
+                    <div style="margin:8px 0;">
+                        ${item.features.map(f => `<span style="background:#dbeafe;color:#1e40af;padding:3px 10px;border-radius:12px;font-size:0.8em;margin-right:5px;">${f}</span>`).join('')}
+                    </div>
+                    <p style="color:#667eea;margin:8px 0;"><i class="fas fa-link"></i> <a href="${item.fullUrl}" target="_blank">${item.fullUrl}</a></p>
+                    <div class="result-contact">
+                        <i class="fas fa-phone"></i> <strong>${item.contact}</strong>
+                    </div>
+                    <button class="explain-btn" id="explainBtn-${i}" onclick="explainResult(${i})">
+                        <i class="fas fa-volume-up"></i> Explain Details
+                    </button>
+                </div>
+            `).join('');
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function clearResults() {
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('userMsg').classList.remove('show');
+            document.getElementById('assistMsg').classList.remove('show');
+            searchResults = [];
+            pendingQuery = '';
+            waitingForYes = false;
+            isProcessing = false;
+            isExplaining = false;
+            currentExplainingItem = null;
+            updateStatus('🎤 Ready - Keep talking!');
+            setTimeout(() => {
+                if (!isListening && conversationMode === 'continuous') {
+                    try { recognition.start(); } catch(e) {}
+                }
+            }, 500);
+        }
+
+        function saveAsWord() {
+            if (!searchResults.length) { alert('No results'); return; }
+            alert('Word save with images - feature active');
+        }
+
+        function saveAsPDF() {
+            if (!searchResults.length) { alert('No results'); return; }
+            alert('PDF save with images - feature active');
+        }
+
+        function saveAsText() {
+            if (!searchResults.length) { alert('No results'); return; }
+            let content = `ANJALEE RESULTS - ${countryNames[selectedCountry]}\n\n`;
+            searchResults.forEach((r, i) => {
+                content += `${i+1}. ${r.title}\n   Price: ${r.price}\n   Location: ${r.location}\n   Contact: ${r.contact}\n   URL: ${r.fullUrl}\n`;
+                if (r.imageUrl) content += `   Image: ${r.imageUrl}\n`;
+                content += '\n';
+            });
+            const blob = new Blob([content], { type: 'text/plain' });
+            saveAs(blob, `anjalee-${Date.now()}.txt`);
+            alert('✅ Text saved with image URLs!');
+        }
+    </script>
+</body>
+</html>

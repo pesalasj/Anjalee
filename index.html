@@ -539,6 +539,7 @@
                 <strong>💡 Continuous Mode:</strong> Just click mic once and keep talking - no need to say "Anjalee" each time!<br>
                 <strong>🎤 Explain Feature:</strong> Click the purple "Explain Details" button. Say "Anjalee", "Stop", or "Stop reading" to stop.<br>
                 <strong>🔍 Smart Answers:</strong> Ask "which is cheapest?" or "which is nearest?" - Anjalee compares and answers directly!<br>
+                <strong>📱 Mobile:</strong> Allow microphone permission in browser settings for best experience.<br>
                 <strong>Developer:</strong> Pesala S. Jayawardene
             </p>
         </div>
@@ -575,6 +576,22 @@
             }
         }
 
+        // Force microphone permission request on mobile
+        async function requestMicPermission() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                console.log('✅ Microphone permission granted');
+                stream.getTracks().forEach(track => track.stop());
+                return true;
+            } catch (err) {
+                console.error('❌ Microphone permission denied:', err);
+                setTimeout(() => {
+                    alert('🎤 Microphone Permission Needed\n\nTo use voice features, please allow microphone access:\n\n1. Tap the three dots ⋮ in Chrome\n2. Tap "Settings" → "Site settings"\n3. Find "Microphone" → Select "Allow"\n4. Reload the page\n\nOr go to: Phone Settings → Apps → Chrome → Permissions → Microphone → Allow');
+                }, 1000);
+                return false;
+            }
+        }
+
         function showMainApp() {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainContainer').style.display = 'block';
@@ -588,6 +605,12 @@
                 speak('Hello! API key loaded. Click microphone and start talking - no need to say Anjalee!', true);
             }
             loadVoices();
+            
+            // Request microphone permission on mobile
+            if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                console.log('📱 Mobile device detected, requesting mic permission...');
+                requestMicPermission();
+            }
         }
 
         function logout() {
@@ -1267,6 +1290,9 @@
                 isProcessing = false;
                 if (event.error === 'not-allowed') {
                     updateStatus('❌ Allow mic in browser settings');
+                    setTimeout(() => {
+                        alert('🎤 Microphone Access Denied\n\nPlease allow microphone permission:\n\n1. Tap the 🔒 lock icon in address bar\n2. Tap "Permissions"\n3. Select "Microphone" → "Allow"\n4. Reload the page\n\nOr: Settings → Apps → Chrome → Permissions → Microphone → Allow');
+                    }, 1000);
                 }
             };
 
@@ -1289,7 +1315,10 @@
                 isProcessing = false;
                 try {
                     recognition.start();
-                } catch (e) {}
+                } catch (e) {
+                    console.error('Mic start error:', e);
+                    alert('🎤 Microphone Error\n\nPlease allow microphone permission:\n\n1. Tap the three dots ⋮ in Chrome\n2. Tap "Settings" → "Site settings"\n3. Find "Microphone" → Select "Allow"\n4. Reload the page');
+                }
             }
         }
 
@@ -1499,5 +1528,4 @@
         }
     </script>
 </body>
-
 </html>

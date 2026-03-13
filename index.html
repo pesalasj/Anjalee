@@ -121,6 +121,7 @@
         .status.speaking { background: #ecfdf5; color: #059669; }
         .status.searching { background: #eff6ff; color: #2563eb; }
         .status.explaining { background: #fef3c7; color: #d97706; border: 2px solid #f59e0b; }
+        .status.ready { background: #f0fdf4; color: #059669; border: 2px solid #10b981; }
 
         @keyframes pulse {
             0%, 100% { opacity: 1; }
@@ -132,6 +133,7 @@
             background: linear-gradient(135deg, #10b981, #059669);
             color: white; font-size: 60px; cursor: pointer;
             display: block; margin: 30px auto;
+            box-shadow: 0 15px 50px rgba(16, 185, 129, 0.4);
         }
 
         .mic-btn.listening {
@@ -466,7 +468,7 @@
                 </div>
             </div>
 
-            <div class="status" id="status">Click microphone to start</div>
+            <div class="status" id="status">Checking microphone permission...</div>
 
             <!-- Conversation History -->
             <div class="conversation-history" id="conversationHistory" style="display:none;">
@@ -539,7 +541,7 @@
                 <strong>💡 Continuous Mode:</strong> Just click mic once and keep talking - no need to say "Anjalee" each time!<br>
                 <strong>🎤 Explain Feature:</strong> Click the purple "Explain Details" button. Say "Anjalee", "Stop", or "Stop reading" to stop.<br>
                 <strong>🔍 Smart Answers:</strong> Ask "which is cheapest?" or "which is nearest?" - Anjalee compares and answers directly!<br>
-                <strong>📱 Mobile:</strong> Allow microphone permission in browser settings for best experience.<br>
+                <strong>📱 Mobile:</strong> If mic shows blocked, go to Chrome Settings → Site settings → Microphone → Allow for this site.<br>
                 <strong>Developer:</strong> Pesala S. Jayawardene
             </p>
         </div>
@@ -550,6 +552,8 @@
         const DEFAULT_2FA_CODE = '123456';
         let twoFACode = localStorage.getItem('anjalee_2fa_code') || DEFAULT_2FA_CODE;
         let isLoggedIn = sessionStorage.getItem('anjalee_logged_in') === 'true';
+        let micPermissionChecked = false;
+        let micPermissionGranted = false;
 
         window.onload = function() {
             if (isLoggedIn) showMainApp();
@@ -576,18 +580,43 @@
             }
         }
 
-        // Force microphone permission request on mobile
-        async function requestMicPermission() {
+        // Check microphone permission properly
+        async function checkMicPermission() {
             try {
+                // Try to get microphone access
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                console.log('✅ Microphone permission granted');
+                
+                // If successful, stop the stream (we just needed to check permission)
                 stream.getTracks().forEach(track => track.stop());
+                
+                micPermissionGranted = true;
+                micPermissionChecked = true;
+                
+                console.log('✅ Microphone permission granted');
+                updateStatus('✅ Microphone ready! Click to start');
+                document.getElementById('status').className = 'status ready';
+                
                 return true;
             } catch (err) {
-                console.error('❌ Microphone permission denied:', err);
-                setTimeout(() => {
-                    alert('🎤 Microphone Permission Needed\n\nTo use voice features, please allow microphone access:\n\n1. Tap the three dots ⋮ in Chrome\n2. Tap "Settings" → "Site settings"\n3. Find "Microphone" → Select "Allow"\n4. Reload the page\n\nOr go to: Phone Settings → Apps → Chrome → Permissions → Microphone → Allow');
-                }, 1000);
+                console.log('❌ Microphone permission check failed:', err.name);
+                
+                // Check if it's a permission denied error
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    micPermissionGranted = false;
+                    micPermissionChecked = true;
+                    
+                    updateStatus('⚠️ Mic blocked - Tap to allow in settings');
+                    document.getElementById('status').className = 'status';
+                    
+                    // Show helpful message
+                    setTimeout(() => {
+                        alert('🎤 Microphone Permission Needed\n\nIt looks like microphone access was previously denied.\n\nTo fix this:\n\n1. Tap the three dots ⋮ in Chrome\n2. Tap "Settings" → "Site settings" → "Microphone"\n3. Find "pesalasj.github.io" in the list\n4. Tap it → Select "Allow"\n5. Return and refresh the page\n\nOR:\n\nPhone Settings → Apps → Chrome → Permissions → Microphone → Allow');
+                    }, 1000);
+                } else {
+                    // Other errors - try again
+                    micPermissionChecked = false;
+                }
+                
                 return false;
             }
         }
@@ -601,16 +630,17 @@
                 document.getElementById('apiKey').value = apiKey;
                 document.getElementById('setupBox').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
-                initRecognition();
-                speak('Hello! API key loaded. Click microphone and start talking - no need to say Anjalee!', true);
+                
+                // Check mic permission FIRST before initializing recognition
+                checkMicPermission().then(() => {
+                    initRecognition();
+                    speak('Hello! API key loaded. Click microphone and start talking - no need to say Anjalee!', true);
+                });
+            } else {
+                // Check mic permission even without API key
+                checkMicPermission();
             }
             loadVoices();
-            
-            // Request microphone permission on mobile
-            if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                console.log('📱 Mobile device detected, requesting mic permission...');
-                requestMicPermission();
-            }
         }
 
         function logout() {
@@ -726,9 +756,12 @@
             const savedMode = localStorage.getItem('anjalee_mode') || 'continuous';
             setMode(savedMode);
             
-            initRecognition();
-            speak('API key saved! Click microphone and start talking!', true);
-            updateStatus('✅ API key saved! Click microphone');
+            // Check mic permission before initializing
+            checkMicPermission().then(() => {
+                initRecognition();
+                speak('API key saved! Click microphone and start talking!', true);
+                updateStatus('✅ API key saved! Click microphone');
+            });
         }
 
         // ==================== VOICE SYSTEM ====================
@@ -798,7 +831,7 @@
             }, 100);
         }
 
-        // Explain result details - UPDATED: No URLs, better stop commands
+        // Explain result details
         function explainResult(index) {
             if (!searchResults[index]) return;
             
@@ -806,14 +839,12 @@
             currentExplainingItem = item;
             isExplaining = true;
             
-            // Update button state
             const btn = document.getElementById(`explainBtn-${index}`);
             if (btn) {
                 btn.classList.add('explaining');
                 btn.innerHTML = '<i class="fas fa-volume-up"></i> Explaining... Say "Anjalee" or "Stop"';
             }
             
-            // Create detailed explanation WITHOUT links/URLs
             const explanation = `
                 Here are the details for ${item.title}. 
                 The price is ${item.price}. 
@@ -826,7 +857,6 @@
             
             speak(explanation, true);
             
-            // Keep mic active for questions and stop commands
             setTimeout(() => {
                 if (isExplaining && !isListening) {
                     try {
@@ -837,7 +867,6 @@
             }, 3000);
         }
 
-        // Stop explaining - UPDATED with better command detection
         function stopExplaining() {
             if (!isExplaining) return;
             
@@ -845,7 +874,6 @@
             currentExplainingItem = null;
             window.speechSynthesis.cancel();
             
-            // Reset all explain buttons
             document.querySelectorAll('.explain-btn').forEach(btn => {
                 btn.classList.remove('explaining');
                 btn.innerHTML = '<i class="fas fa-volume-up"></i> Explain Details';
@@ -854,14 +882,12 @@
             updateStatus('✅ Stopped explaining. Keep talking or say "stop" to end');
         }
 
-        // Search for additional information - SMART ANSWERING VERSION
+        // Search for additional information
         async function searchAdditionalInfo(item, question) {
             console.log('🔍 Processing question:', question);
             updateStatus('🔍 Answering: ' + question);
             
             const lowerQuestion = question.toLowerCase();
-            
-            // FIRST: Try to answer from current search results
             const answer = answerFromResults(lowerQuestion, searchResults);
             
             if (answer) {
@@ -870,16 +896,13 @@
                 return;
             }
             
-            // SECOND: Try internet search as fallback
             console.log('🌐 Falling back to internet search');
             await searchFromInternet(item, question);
         }
 
-        // Answer questions from current search results
         function answerFromResults(question, results) {
             if (!results || results.length === 0) return null;
             
-            // Price comparison questions
             if (question.includes('lowest cost') || question.includes('cheapest') || 
                 question.includes('lowest price') || question.includes('less expensive')) {
                 return findCheapest(results);
@@ -890,13 +913,11 @@
                 return findMostExpensive(results);
             }
             
-            // Location/distance questions
             if (question.includes('nearest') || question.includes('closest') || 
                 question.includes('near me') || question.includes('nearby')) {
                 return findNearest(results);
             }
             
-            // Feature questions
             if (question.includes('parking') || question.includes('park')) {
                 return findWithFeature(results, 'parking');
             }
@@ -913,21 +934,14 @@
                 return findWithFeature(results, 'gym');
             }
             
-            // Rating/quality questions
             if (question.includes('best') || question.includes('top') || question.includes('recommended')) {
                 return findBestRated(results);
             }
             
-            if (question.includes('worst') || question.includes('lowest rated')) {
-                return findWorstRated(results);
-            }
-            
-            // Count questions
             if (question.includes('how many') || question.includes('total') || question.includes('count')) {
                 return `There are ${results.length} results in total. ${results[0].title} is the first one.`;
             }
             
-            // Specific item questions
             if (question.includes('first') || question.includes('number 1') || question.includes('top result')) {
                 return summarizeResult(results[0], 1);
             }
@@ -940,22 +954,19 @@
                 return results[2] ? summarizeResult(results[2], 3) : 'There is no third result.';
             }
             
-            return null; // No match, will fall back to internet search
+            return null;
         }
 
-        // Helper functions for answering from results
         function findCheapest(results) {
-            // Try to extract prices and find lowest
             const priced = results.filter(r => {
                 const priceMatch = r.price?.match(/[\d,]+/);
                 return priceMatch && !r.price.toLowerCase().includes('request');
             });
             
             if (priced.length === 0) {
-                return 'I could not determine prices from the results. Most listings show "Price on request". Would you like me to search the internet for current pricing?';
+                return 'I could not determine prices from the results. Most listings show "Price on request".';
             }
             
-            // Simple comparison - find lowest numeric value
             let cheapest = priced[0];
             let lowestPrice = extractPriceNumber(cheapest.price);
             
@@ -967,7 +978,7 @@
                 }
             }
             
-            return `The lowest cost option is ${cheapest.title} at ${cheapest.price}, located in ${cheapest.location}. ${cheapest.features.length > 0 ? 'Features include: ' + cheapest.features.join(', ') + '.' : ''} Would you like more details?`;
+            return `The lowest cost option is ${cheapest.title} at ${cheapest.price}, located in ${cheapest.location}. ${cheapest.features.length > 0 ? 'Features include: ' + cheapest.features.join(', ') + '.' : ''}`;
         }
 
         function findMostExpensive(results) {
@@ -976,9 +987,7 @@
                 return priceMatch && !r.price.toLowerCase().includes('request');
             });
             
-            if (priced.length === 0) {
-                return 'I could not determine prices from the results.';
-            }
+            if (priced.length === 0) return 'I could not determine prices from the results.';
             
             let mostExpensive = priced[0];
             let highestPrice = extractPriceNumber(mostExpensive.price);
@@ -995,8 +1004,7 @@
         }
 
         function findNearest(results) {
-            // For now, return first result as "nearest" since we don't have user location
-            return `Based on the search results, ${results[0].title} in ${results[0].location} appears to be a good option. Would you like me to search for distances from your specific location?`;
+            return `Based on the search results, ${results[0].title} in ${results[0].location} appears to be a good option.`;
         }
 
         function findWithFeature(results, feature) {
@@ -1006,21 +1014,15 @@
             );
             
             if (withFeature.length === 0) {
-                return `I did not find any results mentioning ${feature}. Would you like me to search the internet for ${feature} information?`;
+                return `I did not find any results mentioning ${feature}.`;
             }
             
             const first = withFeature[0];
-            return `${first.title} offers ${feature}. It is located in ${first.location} and costs ${first.price}. ${first.features.length > 0 ? 'Other features: ' + first.features.join(', ') + '.' : ''}`;
+            return `${first.title} offers ${feature}. It is located in ${first.location} and costs ${first.price}.`;
         }
 
         function findBestRated(results) {
-            // For now, return first result as "best" since we don't have ratings
-            return `Based on the search results, ${results[0].title} appears to be a top option. It is located in ${results[0].location} with price ${results[0].price}. Would you like me to search for customer reviews?`;
-        }
-
-        function findWorstRated(results) {
-            const last = results[results.length - 1];
-            return `The last result is ${last.title} in ${last.location}. However, I don't have rating information to determine the worst rated option.`;
+            return `Based on the search results, ${results[0].title} appears to be a top option. It is located in ${results[0].location} with price ${results[0].price}.`;
         }
 
         function summarizeResult(result, position) {
@@ -1034,12 +1036,10 @@
             return parseInt(match[0].replace(/,/g, ''), 10) || Infinity;
         }
 
-        // Fallback to internet search
         async function searchFromInternet(item, question) {
             try {
                 let searchQuery = `${item.title} ${question} ${item.location}`;
                 
-                // Optimize query based on question type
                 const lowerQuestion = question.toLowerCase();
                 if (lowerQuestion.includes('price') || lowerQuestion.includes('cost')) {
                     searchQuery = `${item.title} current price ${item.location} 2024`;
@@ -1068,7 +1068,6 @@
                 const data = await response.json();
                 
                 if (data.organic && data.organic.length > 0) {
-                    // Get the most relevant snippet
                     const snippet = data.organic[0].snippet;
                     const answer = snippet.length > 200 ? snippet.substring(0, 200) + '...' : snippet;
                     
@@ -1138,7 +1137,6 @@
                 isListening = false;
                 document.getElementById('micBtn').classList.remove('listening');
                 
-                // AUTO-RESTART in continuous mode (but not if explaining)
                 if (conversationMode === 'continuous' && !isExplaining && !processLock && !isSpeaking) {
                     console.log('🔄 Auto-restarting mic for continuous mode');
                     setTimeout(() => {
@@ -1152,7 +1150,6 @@
                         }
                     }, 1000);
                 }
-                // Save Mode - only restart if waiting for yes/no
                 else if (conversationMode === 'save' && waitingForYes && !processLock && !isSpeaking) {
                     setTimeout(() => {
                         if (!isListening && !isSpeaking && waitingForYes) {
@@ -1170,7 +1167,6 @@
                 
                 console.log('🎤 Heard:', text);
                 
-                // Check for stop commands during explanation - UPDATED
                 if (isExplaining) {
                     const lowerText = text.toLowerCase();
                     if (lowerText.includes('anjalee') || 
@@ -1183,17 +1179,14 @@
                     }
                 }
                 
-                // If explaining, handle questions intelligently
                 if (isExplaining && currentExplainingItem) {
                     console.log('💬 Question during explanation:', text);
                     if (text.length > 5 && !text.toLowerCase().includes('anjalee') && !text.toLowerCase().includes('stop')) {
-                        // Answer the question intelligently
                         searchAdditionalInfo(currentExplainingItem, text);
                     }
                     return;
                 }
                 
-                // Prevent duplicates
                 if (text === lastProcessedText && (currentTime - lastProcessedTime) < 5000) {
                     console.log('⏭️ Skipping duplicate');
                     return;
@@ -1213,7 +1206,6 @@
                 
                 const lower = text.toLowerCase();
                 
-                // Check for stop commands
                 if (lower.includes('stop') || lower.includes('goodbye') || lower.includes('bye')) {
                     speak('Goodbye! Have a great day!', true);
                     updateStatus('👋 Ended');
@@ -1222,7 +1214,6 @@
                     return;
                 }
                 
-                // CONTINUOUS MODE - NO WAKE WORD NEEDED
                 if (conversationMode === 'continuous') {
                     console.log('📍 Continuous Mode - searching without wake word');
                     if (text.length > 5) {
@@ -1233,7 +1224,6 @@
                     }
                 }
                 
-                // SAVE MODE - Wake word required
                 const wakeWords = ['anjalee', 'anjali', 'angel', 'anjale'];
                 let wakeWordFound = false;
                 let command = '';
@@ -1289,10 +1279,9 @@
                 console.log('❌ Error:', event.error);
                 isProcessing = false;
                 if (event.error === 'not-allowed') {
-                    updateStatus('❌ Allow mic in browser settings');
-                    setTimeout(() => {
-                        alert('🎤 Microphone Access Denied\n\nPlease allow microphone permission:\n\n1. Tap the 🔒 lock icon in address bar\n2. Tap "Permissions"\n3. Select "Microphone" → "Allow"\n4. Reload the page\n\nOr: Settings → Apps → Chrome → Permissions → Microphone → Allow');
-                    }, 1000);
+                    updateStatus('❌ Mic permission denied');
+                    // Don't show alert every time, just update status
+                    micPermissionGranted = false;
                 }
             };
 
@@ -1300,6 +1289,30 @@
         }
 
         function toggleMic() {
+            // Check mic permission first
+            if (!micPermissionChecked) {
+                updateStatus('⏳ Checking microphone...');
+                checkMicPermission().then(granted => {
+                    if (granted) {
+                        toggleMicAction();
+                    }
+                });
+                return;
+            }
+            
+            if (!micPermissionGranted) {
+                // Permission was denied, show help
+                updateStatus('⚠️ Mic blocked - Tap for help');
+                setTimeout(() => {
+                    alert('🎤 Microphone Permission Needed\n\nTo allow microphone access:\n\n1. Tap the three dots ⋮ in Chrome\n2. Tap "Settings" → "Site settings"\n3. Tap "Microphone"\n4. Find "pesalasj.github.io" in the list\n5. Tap it → Select "Allow"\n6. Return and tap the mic button again\n\nOR:\n\nPhone Settings → Apps → Chrome → Permissions → Microphone → Allow');
+                }, 500);
+                return;
+            }
+            
+            toggleMicAction();
+        }
+
+        function toggleMicAction() {
             if (!recognition) {
                 alert('Save API key first');
                 return;
@@ -1310,14 +1323,15 @@
                 isListening = false;
                 isProcessing = false;
                 document.getElementById('micBtn').classList.remove('listening');
-                updateStatus('⏸️ Paused');
+                updateStatus('⏸️ Paused. Tap to resume');
             } else {
                 isProcessing = false;
                 try {
                     recognition.start();
                 } catch (e) {
                     console.error('Mic start error:', e);
-                    alert('🎤 Microphone Error\n\nPlease allow microphone permission:\n\n1. Tap the three dots ⋮ in Chrome\n2. Tap "Settings" → "Site settings"\n3. Find "Microphone" → Select "Allow"\n4. Reload the page');
+                    // If it fails, re-check permission
+                    checkMicPermission();
                 }
             }
         }
@@ -1330,6 +1344,7 @@
             else if (text.includes('Speaking')) bar.classList.add('speaking');
             else if (text.includes('Searching')) bar.classList.add('searching');
             else if (text.includes('Explaining')) bar.classList.add('explaining');
+            else if (text.includes('ready') || text.includes('Ready')) bar.classList.add('ready');
         }
 
         async function doSearch(query) {
@@ -1367,7 +1382,6 @@
                     throw new Error('No results found');
                 }
                 
-                // Fetch images
                 let imageData = { images: [] };
                 try {
                     const imageResponse = await fetch('https://google.serper.dev/images', {
@@ -1422,9 +1436,7 @@
                     };
                 });
                 
-                // Add to conversation history
                 addToHistory(query, searchResults);
-                
                 showResults();
                 
                 const msg = 'Found ' + searchResults.length + ' results in ' + countryNames[country] + '.';
@@ -1435,7 +1447,6 @@
                 
                 if (conversationMode === 'continuous') {
                     updateStatus('✅ Done! Keep talking or say "stop" to end');
-                    // RESTART MIC after search completes
                     setTimeout(() => {
                         if (!isListening && conversationMode === 'continuous' && !isExplaining) {
                             try {

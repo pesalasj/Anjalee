@@ -19,7 +19,6 @@
             --danger: #ef4444;
             --dark: #1e293b;
             --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             --shadow-lg: 0 20px 60px rgba(0,0,0,0.3);
         }
 
@@ -72,10 +71,6 @@
             color: white; border: none; border-radius: 12px;
             font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 15px;
         }
-        .login-box .error-msg {
-            background: #fef2f2; color: #dc2626; padding: 12px;
-            border-radius: 8px; margin: 15px 0; display: none;
-        }
 
         .header {
             text-align: center; margin-bottom: 30px; padding: 25px;
@@ -120,7 +115,6 @@
 
         .status.speaking { background: #ecfdf5; color: #059669; }
         .status.searching { background: #eff6ff; color: #2563eb; }
-        .status.explaining { background: #fef3c7; color: #d97706; border: 2px solid #f59e0b; }
         .status.ready { background: #f0fdf4; color: #059669; border: 2px solid #10b981; }
 
         @keyframes pulse {
@@ -150,12 +144,6 @@
             text-align: center;
         }
 
-        .mode-selector h3 {
-            color: #1e40af;
-            margin-bottom: 15px;
-            font-size: 1.1em;
-        }
-
         .mode-toggle {
             display: flex;
             gap: 15px;
@@ -173,18 +161,12 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 14px;
-            transition: all 0.3s;
         }
 
         .mode-btn.active {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        .mode-btn:hover {
-            transform: translateY(-2px);
         }
 
         .mode-info {
@@ -223,7 +205,6 @@
             border-radius: 16px;
             padding: 20px;
             margin: 20px 0;
-            position: relative;
         }
 
         .result-image {
@@ -271,13 +252,6 @@
             font-size: 14px;
             margin-top: 15px;
             width: 100%;
-            transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-        }
-
-        .explain-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
         }
 
         .explain-btn.explaining {
@@ -358,31 +332,6 @@
             border-radius: 8px; cursor: pointer; font-weight: 600;
         }
 
-        .conversation-history {
-            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
-            border: 2px solid #0ea5e9;
-            border-radius: 12px;
-            padding: 18px;
-            margin: 20px 0;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .conversation-history h4 {
-            color: #0369a1;
-            margin-bottom: 12px;
-            font-size: 1em;
-        }
-
-        .history-item {
-            background: white;
-            padding: 10px;
-            margin: 8px 0;
-            border-radius: 8px;
-            font-size: 0.9em;
-            border-left: 3px solid #0ea5e9;
-        }
-
         @media (max-width: 600px) {
             .container { padding: 20px; }
             h1 { font-size: 1.8em; }
@@ -414,7 +363,7 @@
 
         <div class="header">
             <h1>🎤 Anjalee</h1>
-            <p style="font-size:1em;opacity:0.95;">Professional Voice Assistant - Interactive Mode</p>
+            <p style="font-size:1em;opacity:0.95;">Professional Voice Assistant</p>
             <div class="developer-credit"><strong>Developer:</strong> Pesala S. Jayawardene</div>
         </div>
 
@@ -451,7 +400,6 @@
                 </select>
             </div>
 
-            <!-- MODE SELECTOR -->
             <div class="mode-selector">
                 <h3>💬 Conversation Mode</h3>
                 <div class="mode-toggle">
@@ -463,18 +411,11 @@
                     </button>
                 </div>
                 <div class="mode-info" id="modeInfo">
-                    <strong>✅ Continuous Mode (Default):</strong> Mic stays ON, no wake word needed, just keep talking. 
-                    Say "stop" or "goodbye" to end.
+                    <strong>✅ Continuous Mode:</strong> Mic stays ON, no wake word needed, just keep talking.
                 </div>
             </div>
 
-            <div class="status" id="status">Checking microphone permission...</div>
-
-            <!-- Conversation History -->
-            <div class="conversation-history" id="conversationHistory" style="display:none;">
-                <h4><i class="fas fa-history"></i> Conversation History</h4>
-                <div id="historyList"></div>
-            </div>
+            <div class="status" id="status">🎤 Tap microphone button to start</div>
 
             <div class="settings">
                 <div>
@@ -528,20 +469,14 @@
             <strong>How to Use:</strong>
             <ol>
                 <li><strong>Login:</strong> Enter code 123456</li>
-                <li><strong>Save API key:</strong> From serper.dev (free 2,500 searches/month)</li>
-                <li><strong>Select Mode:</strong> Continuous (default) or Save Mode</li>
-                <li><strong>Continuous Mode:</strong> Click mic ONCE, keep talking, NO wake word needed, mic stays ON</li>
-                <li><strong>Save Mode:</strong> Say "Anjalee" before each search, confirmation required</li>
-                <li><strong>Explain Button:</strong> Click on any result to hear details (no URLs), say "Anjalee" or "Stop" to stop</li>
-                <li><strong>Ask Questions:</strong> While explaining, ask specific questions like "which is cheapest?" - Anjalee will answer directly!</li>
-                <li><strong>End:</strong> Say "stop" or "goodbye" (Continuous) or click mic button</li>
-                <li>Results appear with images!</li>
+                <li><strong>Save API key:</strong> From serper.dev (free)</li>
+                <li><strong>Click Microphone:</strong> Browser will ask for permission → Click "Allow"</li>
+                <li><strong>Start Talking:</strong> Say what you're looking for</li>
+                <li><strong>Results Appear:</strong> With images, prices, and contact details</li>
             </ol>
             <p style="margin-top:15px;padding:15px;background:#fef3c7;border-radius:8px;color:#92400e;">
-                <strong>💡 Continuous Mode:</strong> Just click mic once and keep talking - no need to say "Anjalee" each time!<br>
-                <strong>🎤 Explain Feature:</strong> Click the purple "Explain Details" button. Say "Anjalee", "Stop", or "Stop reading" to stop.<br>
-                <strong>🔍 Smart Answers:</strong> Ask "which is cheapest?" or "which is nearest?" - Anjalee compares and answers directly!<br>
-                <strong>📱 Mobile:</strong> If mic shows blocked, go to Chrome Settings → Site settings → Microphone → Allow for this site.<br>
+                <strong>🎤 First Time:</strong> Browser will ask for microphone permission - Click "Allow"<br>
+                <strong>📱 Mobile:</strong> If permission doesn't appear, tap address bar → Settings → Permissions → Microphone → Allow<br>
                 <strong>Developer:</strong> Pesala S. Jayawardene
             </p>
         </div>
@@ -552,11 +487,14 @@
         const DEFAULT_2FA_CODE = '123456';
         let twoFACode = localStorage.getItem('anjalee_2fa_code') || DEFAULT_2FA_CODE;
         let isLoggedIn = sessionStorage.getItem('anjalee_logged_in') === 'true';
-        let micPermissionChecked = false;
-        let micPermissionGranted = false;
 
         window.onload = function() {
-            if (isLoggedIn) showMainApp();
+            console.log('=== Anjalee Voice Assistant ===');
+            console.log('Developer: Pesala S. Jayawardene');
+            
+            if (isLoggedIn) {
+                showMainApp();
+            }
             setTimeout(() => document.getElementById('twoFACode').focus(), 500);
             loadVoices();
         };
@@ -580,47 +518,6 @@
             }
         }
 
-        // Check microphone permission properly
-        async function checkMicPermission() {
-            try {
-                // Try to get microphone access
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                
-                // If successful, stop the stream (we just needed to check permission)
-                stream.getTracks().forEach(track => track.stop());
-                
-                micPermissionGranted = true;
-                micPermissionChecked = true;
-                
-                console.log('✅ Microphone permission granted');
-                updateStatus('✅ Microphone ready! Click to start');
-                document.getElementById('status').className = 'status ready';
-                
-                return true;
-            } catch (err) {
-                console.log('❌ Microphone permission check failed:', err.name);
-                
-                // Check if it's a permission denied error
-                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    micPermissionGranted = false;
-                    micPermissionChecked = true;
-                    
-                    updateStatus('⚠️ Mic blocked - Tap to allow in settings');
-                    document.getElementById('status').className = 'status';
-                    
-                    // Show helpful message
-                    setTimeout(() => {
-                        alert('🎤 Microphone Permission Needed\n\nIt looks like microphone access was previously denied.\n\nTo fix this:\n\n1. Tap the three dots ⋮ in Chrome\n2. Tap "Settings" → "Site settings" → "Microphone"\n3. Find "pesalasj.github.io" in the list\n4. Tap it → Select "Allow"\n5. Return and refresh the page\n\nOR:\n\nPhone Settings → Apps → Chrome → Permissions → Microphone → Allow');
-                    }, 1000);
-                } else {
-                    // Other errors - try again
-                    micPermissionChecked = false;
-                }
-                
-                return false;
-            }
-        }
-
         function showMainApp() {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainContainer').style.display = 'block';
@@ -631,14 +528,11 @@
                 document.getElementById('setupBox').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
                 
-                // Check mic permission FIRST before initializing recognition
-                checkMicPermission().then(() => {
-                    initRecognition();
-                    speak('Hello! API key loaded. Click microphone and start talking - no need to say Anjalee!', true);
-                });
-            } else {
-                // Check mic permission even without API key
-                checkMicPermission();
+                // Initialize recognition WITHOUT checking getUserMedia first
+                initRecognition();
+                
+                speak('Hello! API key loaded. Tap the microphone button to start.', true);
+                updateStatus('🎤 Tap microphone to start');
             }
             loadVoices();
         }
@@ -662,15 +556,12 @@
             
             const info = document.getElementById('modeInfo');
             if (mode === 'continuous') {
-                info.innerHTML = '<strong>✅ Continuous Mode:</strong> Mic stays ON, no wake word needed, just keep talking. Say "stop" or "goodbye" to end.';
-                document.getElementById('conversationHistory').style.display = 'block';
+                info.innerHTML = '<strong>✅ Continuous Mode:</strong> Mic stays ON, no wake word needed, just keep talking.';
             } else {
-                info.innerHTML = '<strong>💾 Save Mode:</strong> Say "Anjalee" before each search. Confirmation required. Best for saving each search separately.';
-                document.getElementById('conversationHistory').style.display = 'none';
+                info.innerHTML = '<strong>💾 Save Mode:</strong> Say "Anjalee" before each search.';
             }
             
             localStorage.setItem('anjalee_mode', mode);
-            speak('Mode changed to ' + (mode === 'continuous' ? 'Continuous - just keep talking' : 'Save Mode - say Anjalee before searching'), true);
         }
 
         function addToHistory(query, results) {
@@ -683,22 +574,6 @@
             });
             
             if (conversationHistory.length > 10) conversationHistory.shift();
-            updateHistoryDisplay();
-        }
-
-        function updateHistoryDisplay() {
-            const list = document.getElementById('historyList');
-            if (conversationHistory.length === 0) {
-                list.innerHTML = '<p style="color:#64748b;font-style:italic;">No searches yet</p>';
-                return;
-            }
-            
-            list.innerHTML = conversationHistory.map((item, i) => `
-                <div class="history-item">
-                    <strong>${i+1}.</strong> ${item.query}<br>
-                    <small style="color:#64748b;">${item.count} results • ${item.time}</small>
-                </div>
-            `).join('');
         }
 
         // ==================== API KEY ====================
@@ -727,11 +602,9 @@
                 if (response.status === 200) {
                     statusDiv.className = 'status';
                     statusDiv.innerHTML = '✅ Success! Click "Save & Continue"';
-                    speak('API key test successful!', true);
                 } else if (response.status === 401 || response.status === 403) {
                     statusDiv.className = 'status';
                     statusDiv.innerHTML = '❌ 403 Error - Wait 2-3 minutes after signing up';
-                    speak('Key not activated yet. Wait 2 to 3 minutes.', true);
                 } else {
                     statusDiv.className = 'status';
                     statusDiv.innerHTML = '❌ Error: ' + response.status;
@@ -756,12 +629,9 @@
             const savedMode = localStorage.getItem('anjalee_mode') || 'continuous';
             setMode(savedMode);
             
-            // Check mic permission before initializing
-            checkMicPermission().then(() => {
-                initRecognition();
-                speak('API key saved! Click microphone and start talking!', true);
-                updateStatus('✅ API key saved! Click microphone');
-            });
+            initRecognition();
+            speak('API key saved! Tap microphone to start.', true);
+            updateStatus('✅ API key saved! Tap microphone');
         }
 
         // ==================== VOICE SYSTEM ====================
@@ -797,7 +667,6 @@
             currentLanguage = document.getElementById('languageSelect').value;
             if (recognition) recognition.lang = currentLanguage;
             selectBestVoice(currentLanguage);
-            speak('Language changed', true);
         }
 
         function speak(text, useFemaleVoice = true) {
@@ -813,11 +682,7 @@
                 
                 utterance.onstart = () => {
                     isSpeaking = true;
-                    if (isExplaining) {
-                        updateStatus('🔊 Explaining... Say "Anjalee" or "Stop" to stop');
-                    } else {
-                        updateStatus('🔊 Speaking...');
-                    }
+                    updateStatus('🔊 Speaking...');
                 };
                 
                 utterance.onend = () => {
@@ -842,27 +707,16 @@
             const btn = document.getElementById(`explainBtn-${index}`);
             if (btn) {
                 btn.classList.add('explaining');
-                btn.innerHTML = '<i class="fas fa-volume-up"></i> Explaining... Say "Anjalee" or "Stop"';
+                btn.innerHTML = '<i class="fas fa-volume-up"></i> Explaining...';
             }
             
-            const explanation = `
-                Here are the details for ${item.title}. 
-                The price is ${item.price}. 
-                Location is ${item.location}. 
-                Contact information: ${item.contact}. 
-                Features include: ${item.features.join(', ')}.
-                ${item.description ? 'Description: ' + item.description : ''}
-                I can provide more information if you have questions. Say Anjalee, Stop, or Stop reading to end.
-            `;
+            const explanation = `Here are the details for ${item.title}. The price is ${item.price}. Location is ${item.location}. Contact: ${item.contact}. Features: ${item.features.join(', ')}.`;
             
             speak(explanation, true);
             
             setTimeout(() => {
                 if (isExplaining && !isListening) {
-                    try {
-                        recognition.start();
-                        console.log('✅ Mic restarted for questions');
-                    } catch(e) {}
+                    try { recognition.start(); } catch(e) {}
                 }
             }, 3000);
         }
@@ -879,79 +733,33 @@
                 btn.innerHTML = '<i class="fas fa-volume-up"></i> Explain Details';
             });
             
-            updateStatus('✅ Stopped explaining. Keep talking or say "stop" to end');
+            updateStatus('✅ Stopped. Keep talking!');
         }
 
         // Search for additional information
         async function searchAdditionalInfo(item, question) {
-            console.log('🔍 Processing question:', question);
             updateStatus('🔍 Answering: ' + question);
             
             const lowerQuestion = question.toLowerCase();
             const answer = answerFromResults(lowerQuestion, searchResults);
             
             if (answer) {
-                console.log('✅ Answered from results:', answer);
                 speak(answer, true);
                 return;
             }
             
-            console.log('🌐 Falling back to internet search');
             await searchFromInternet(item, question);
         }
 
         function answerFromResults(question, results) {
             if (!results || results.length === 0) return null;
             
-            if (question.includes('lowest cost') || question.includes('cheapest') || 
-                question.includes('lowest price') || question.includes('less expensive')) {
+            if (question.includes('cheapest') || question.includes('lowest')) {
                 return findCheapest(results);
             }
             
-            if (question.includes('highest cost') || question.includes('most expensive') || 
-                question.includes('highest price')) {
-                return findMostExpensive(results);
-            }
-            
-            if (question.includes('nearest') || question.includes('closest') || 
-                question.includes('near me') || question.includes('nearby')) {
-                return findNearest(results);
-            }
-            
-            if (question.includes('parking') || question.includes('park')) {
-                return findWithFeature(results, 'parking');
-            }
-            
-            if (question.includes('wifi') || question.includes('internet') || question.includes('wireless')) {
-                return findWithFeature(results, 'wifi');
-            }
-            
-            if (question.includes('pool') || question.includes('swimming')) {
-                return findWithFeature(results, 'pool');
-            }
-            
-            if (question.includes('gym') || question.includes('fitness')) {
-                return findWithFeature(results, 'gym');
-            }
-            
-            if (question.includes('best') || question.includes('top') || question.includes('recommended')) {
-                return findBestRated(results);
-            }
-            
-            if (question.includes('how many') || question.includes('total') || question.includes('count')) {
-                return `There are ${results.length} results in total. ${results[0].title} is the first one.`;
-            }
-            
-            if (question.includes('first') || question.includes('number 1') || question.includes('top result')) {
-                return summarizeResult(results[0], 1);
-            }
-            
-            if (question.includes('second') || question.includes('number 2')) {
-                return results[1] ? summarizeResult(results[1], 2) : 'There is no second result.';
-            }
-            
-            if (question.includes('third') || question.includes('number 3')) {
-                return results[2] ? summarizeResult(results[2], 3) : 'There is no third result.';
+            if (question.includes('how many') || question.includes('total')) {
+                return `There are ${results.length} results.`;
             }
             
             return null;
@@ -963,9 +771,7 @@
                 return priceMatch && !r.price.toLowerCase().includes('request');
             });
             
-            if (priced.length === 0) {
-                return 'I could not determine prices from the results. Most listings show "Price on request".';
-            }
+            if (priced.length === 0) return 'Could not determine prices.';
             
             let cheapest = priced[0];
             let lowestPrice = extractPriceNumber(cheapest.price);
@@ -978,55 +784,7 @@
                 }
             }
             
-            return `The lowest cost option is ${cheapest.title} at ${cheapest.price}, located in ${cheapest.location}. ${cheapest.features.length > 0 ? 'Features include: ' + cheapest.features.join(', ') + '.' : ''}`;
-        }
-
-        function findMostExpensive(results) {
-            const priced = results.filter(r => {
-                const priceMatch = r.price?.match(/[\d,]+/);
-                return priceMatch && !r.price.toLowerCase().includes('request');
-            });
-            
-            if (priced.length === 0) return 'I could not determine prices from the results.';
-            
-            let mostExpensive = priced[0];
-            let highestPrice = extractPriceNumber(mostExpensive.price);
-            
-            for (let i = 1; i < priced.length; i++) {
-                const priceNum = extractPriceNumber(priced[i].price);
-                if (priceNum > highestPrice) {
-                    highestPrice = priceNum;
-                    mostExpensive = priced[i];
-                }
-            }
-            
-            return `The most expensive option is ${mostExpensive.title} at ${mostExpensive.price}, located in ${mostExpensive.location}.`;
-        }
-
-        function findNearest(results) {
-            return `Based on the search results, ${results[0].title} in ${results[0].location} appears to be a good option.`;
-        }
-
-        function findWithFeature(results, feature) {
-            const withFeature = results.filter(r => 
-                r.features.some(f => f.toLowerCase().includes(feature)) ||
-                r.description?.toLowerCase().includes(feature)
-            );
-            
-            if (withFeature.length === 0) {
-                return `I did not find any results mentioning ${feature}.`;
-            }
-            
-            const first = withFeature[0];
-            return `${first.title} offers ${feature}. It is located in ${first.location} and costs ${first.price}.`;
-        }
-
-        function findBestRated(results) {
-            return `Based on the search results, ${results[0].title} appears to be a top option. It is located in ${results[0].location} with price ${results[0].price}.`;
-        }
-
-        function summarizeResult(result, position) {
-            return `Result number ${position}: ${result.title}. Price: ${result.price}. Location: ${result.location}. Contact: ${result.contact}. Features: ${result.features.join(', ')}.`;
+            return `The lowest cost is ${cheapest.title} at ${cheapest.price}.`;
         }
 
         function extractPriceNumber(priceText) {
@@ -1038,18 +796,7 @@
 
         async function searchFromInternet(item, question) {
             try {
-                let searchQuery = `${item.title} ${question} ${item.location}`;
-                
-                const lowerQuestion = question.toLowerCase();
-                if (lowerQuestion.includes('price') || lowerQuestion.includes('cost')) {
-                    searchQuery = `${item.title} current price ${item.location} 2024`;
-                } else if (lowerQuestion.includes('review') || lowerQuestion.includes('rating')) {
-                    searchQuery = `${item.title} reviews ratings ${item.location}`;
-                } else if (lowerQuestion.includes('contact') || lowerQuestion.includes('phone')) {
-                    searchQuery = `${item.title} contact phone email ${item.location}`;
-                }
-                
-                console.log('🔍 Internet search query:', searchQuery);
+                const searchQuery = `${item.title} ${question} ${item.location}`;
                 
                 const response = await fetch('https://google.serper.dev/search', {
                     method: 'POST',
@@ -1057,10 +804,7 @@
                         'X-API-KEY': apiKey || localStorage.getItem('anjalee_apiKey_v3'),
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        q: searchQuery,
-                        num: 3
-                    })
+                    body: JSON.stringify({ q: searchQuery, num: 3 })
                 });
                 
                 if (!response.ok) throw new Error('API error');
@@ -1069,20 +813,17 @@
                 
                 if (data.organic && data.organic.length > 0) {
                     const snippet = data.organic[0].snippet;
-                    const answer = snippet.length > 200 ? snippet.substring(0, 200) + '...' : snippet;
-                    
-                    speak(`I found: ${answer}. Would you like to know more?`, true);
+                    speak(`I found: ${snippet.substring(0, 200)}.`, true);
                 } else {
-                    speak('I could not find specific information about that. Could you rephrase your question?', true);
+                    speak('Could not find that information.', true);
                 }
                 
             } catch (error) {
-                console.error('Internet search error:', error);
-                speak('Sorry, I could not search the internet right now. Please try again.', true);
+                speak('Sorry, could not search right now.', true);
             }
         }
 
-        // ==================== MIC SYSTEM ====================
+        // ==================== MIC SYSTEM - FIXED! ====================
         let recognition = null;
         let isListening = false;
         let isSpeaking = false;
@@ -1106,11 +847,12 @@
             'lk': 'LK', 'in': 'IN', 'us': 'US', 'gb': 'GB'
         };
 
+        // KEY FIX: Initialize recognition WITHOUT getUserMedia check
         function initRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             
             if (!SpeechRecognition) {
-                alert('Use Chrome browser');
+                alert('Please use Chrome browser for voice support');
                 return;
             }
             
@@ -1121,14 +863,10 @@
             recognition.maxAlternatives = 1;
 
             recognition.onstart = function() {
-                console.log('✅ Recognition started (continuous)');
+                console.log('✅ Recognition started');
                 isListening = true;
                 isProcessing = false;
-                if (isExplaining) {
-                    updateStatus('🔊 Explaining... Say "Anjalee" or "Stop" to stop');
-                } else {
-                    updateStatus('🎤 Listening continuously... Just talk!');
-                }
+                updateStatus('🎤 Listening... Speak now!');
                 document.getElementById('micBtn').classList.add('listening');
             };
 
@@ -1137,25 +875,16 @@
                 isListening = false;
                 document.getElementById('micBtn').classList.remove('listening');
                 
+                // Auto-restart in continuous mode
                 if (conversationMode === 'continuous' && !isExplaining && !processLock && !isSpeaking) {
-                    console.log('🔄 Auto-restarting mic for continuous mode');
                     setTimeout(() => {
                         if (!isListening && !isSpeaking && conversationMode === 'continuous' && !isExplaining) {
                             try {
                                 recognition.start();
                                 console.log('✅ Mic auto-restarted');
                             } catch (e) {
-                                console.log('❌ Auto-restart failed:', e.message);
+                                console.log('Auto-restart failed:', e.message);
                             }
-                        }
-                    }, 1000);
-                }
-                else if (conversationMode === 'save' && waitingForYes && !processLock && !isSpeaking) {
-                    setTimeout(() => {
-                        if (!isListening && !isSpeaking && waitingForYes) {
-                            try {
-                                recognition.start();
-                            } catch (e) {}
                         }
                     }, 1000);
                 }
@@ -1167,35 +896,29 @@
                 
                 console.log('🎤 Heard:', text);
                 
+                // Stop commands during explanation
                 if (isExplaining) {
                     const lowerText = text.toLowerCase();
-                    if (lowerText.includes('anjalee') || 
-                        lowerText.includes('stop') || 
-                        lowerText.includes('stop reading') ||
-                        lowerText.includes('anjalee stop')) {
-                        console.log('🛑 Stop command detected:', text);
+                    if (lowerText.includes('anjalee') || lowerText.includes('stop')) {
                         stopExplaining();
                         return;
                     }
                 }
                 
+                // Handle questions during explanation
                 if (isExplaining && currentExplainingItem) {
-                    console.log('💬 Question during explanation:', text);
                     if (text.length > 5 && !text.toLowerCase().includes('anjalee') && !text.toLowerCase().includes('stop')) {
                         searchAdditionalInfo(currentExplainingItem, text);
                     }
                     return;
                 }
                 
+                // Prevent duplicates
                 if (text === lastProcessedText && (currentTime - lastProcessedTime) < 5000) {
-                    console.log('⏭️ Skipping duplicate');
                     return;
                 }
                 
-                if (isProcessing) {
-                    console.log('🔒 Already processing');
-                    return;
-                }
+                if (isProcessing) return;
                 
                 isProcessing = true;
                 lastProcessedText = text;
@@ -1206,16 +929,17 @@
                 
                 const lower = text.toLowerCase();
                 
+                // Stop commands
                 if (lower.includes('stop') || lower.includes('goodbye') || lower.includes('bye')) {
-                    speak('Goodbye! Have a great day!', true);
+                    speak('Goodbye!', true);
                     updateStatus('👋 Ended');
                     if (isListening) recognition.stop();
                     isProcessing = false;
                     return;
                 }
                 
+                // Continuous mode - search without wake word
                 if (conversationMode === 'continuous') {
-                    console.log('📍 Continuous Mode - searching without wake word');
                     if (text.length > 5) {
                         if (isListening) recognition.stop();
                         doSearch(text);
@@ -1224,6 +948,7 @@
                     }
                 }
                 
+                // Save mode - wake word required
                 const wakeWords = ['anjalee', 'anjali', 'angel', 'anjale'];
                 let wakeWordFound = false;
                 let command = '';
@@ -1232,7 +957,6 @@
                     if (lower.includes(word)) {
                         wakeWordFound = true;
                         command = text.replace(new RegExp(word, 'gi'), '').trim();
-                        console.log('✅ Wake word found:', command);
                         break;
                     }
                 }
@@ -1243,14 +967,12 @@
                     waitingForYes = true;
                     
                     if (isListening) recognition.stop();
-                    speak('Yes! You said: "' + command + '". Should I search? Say yes or no.', true);
+                    speak('Should I search for: "' + command + '"? Say yes or no.', true);
                     updateStatus('⏳ Say "yes" or "no"');
                     
                     setTimeout(() => {
                         if (!isSpeaking && waitingForYes) {
-                            try {
-                                recognition.start();
-                            } catch(e) {}
+                            try { recognition.start(); } catch(e) {}
                         }
                     }, 2500);
                     
@@ -1260,15 +982,12 @@
                     isProcessing = false;
                     
                     if (lower.includes('yes') || lower.includes('yeah') || lower.includes('sure')) {
-                        console.log('✅ YES detected');
                         waitingForYes = false;
                         doSearch(pendingQuery);
                     } else if (lower.includes('no') || lower.includes('nope')) {
-                        console.log('❌ NO detected');
                         waitingForYes = false;
                         pendingQuery = '';
                         speak('What would you like instead?', true);
-                        updateStatus('🎤 Listening...');
                     }
                 } else {
                     isProcessing = false;
@@ -1278,43 +997,32 @@
             recognition.onerror = function(event) {
                 console.log('❌ Error:', event.error);
                 isProcessing = false;
+                
                 if (event.error === 'not-allowed') {
-                    updateStatus('❌ Mic permission denied');
-                    // Don't show alert every time, just update status
-                    micPermissionGranted = false;
+                    updateStatus('❌ Mic blocked - Allow in browser settings');
+                    // Show helpful message ONCE
+                    if (!sessionStorage.getItem('micHelpShown')) {
+                        sessionStorage.setItem('micHelpShown', 'true');
+                        setTimeout(() => {
+                            alert('🎤 Microphone Permission\n\nTo allow microphone:\n\n1. Tap the 🔒 lock icon in address bar\n2. Tap "Permissions" or "Site settings"\n3. Find "Microphone" → Select "Allow"\n4. Refresh the page\n5. Tap the microphone button again');
+                        }, 1000);
+                    }
+                } else if (event.error === 'no-speech') {
+                    // Just restart, no error shown
+                    setTimeout(() => {
+                        try { recognition.start(); } catch(e) {}
+                    }, 2000);
+                } else {
+                    updateStatus('Error: ' + event.error);
                 }
             };
 
-            console.log('✅ Recognition initialized (continuous mode)');
+            console.log('✅ Recognition initialized');
         }
 
         function toggleMic() {
-            // Check mic permission first
-            if (!micPermissionChecked) {
-                updateStatus('⏳ Checking microphone...');
-                checkMicPermission().then(granted => {
-                    if (granted) {
-                        toggleMicAction();
-                    }
-                });
-                return;
-            }
-            
-            if (!micPermissionGranted) {
-                // Permission was denied, show help
-                updateStatus('⚠️ Mic blocked - Tap for help');
-                setTimeout(() => {
-                    alert('🎤 Microphone Permission Needed\n\nTo allow microphone access:\n\n1. Tap the three dots ⋮ in Chrome\n2. Tap "Settings" → "Site settings"\n3. Tap "Microphone"\n4. Find "pesalasj.github.io" in the list\n5. Tap it → Select "Allow"\n6. Return and tap the mic button again\n\nOR:\n\nPhone Settings → Apps → Chrome → Permissions → Microphone → Allow');
-                }, 500);
-                return;
-            }
-            
-            toggleMicAction();
-        }
-
-        function toggleMicAction() {
             if (!recognition) {
-                alert('Save API key first');
+                alert('Please save API key first');
                 return;
             }
             
@@ -1330,8 +1038,10 @@
                     recognition.start();
                 } catch (e) {
                     console.error('Mic start error:', e);
-                    // If it fails, re-check permission
-                    checkMicPermission();
+                    // If it fails, show help
+                    setTimeout(() => {
+                        alert('🎤 Microphone Issue\n\nPlease allow microphone permission:\n\n1. Tap the 🔒 lock icon in address bar\n2. Tap "Permissions"\n3. Select "Microphone" → "Allow"\n4. Refresh and try again');
+                    }, 500);
                 }
             }
         }
@@ -1343,8 +1053,7 @@
             if (text.includes('Listening')) bar.classList.add('listening');
             else if (text.includes('Speaking')) bar.classList.add('speaking');
             else if (text.includes('Searching')) bar.classList.add('searching');
-            else if (text.includes('Explaining')) bar.classList.add('explaining');
-            else if (text.includes('ready') || text.includes('Ready')) bar.classList.add('ready');
+            else if (text.includes('ready') || text.includes('Ready') || text.includes('Tap')) bar.classList.add('ready');
         }
 
         async function doSearch(query) {
@@ -1446,17 +1155,16 @@
                 speak(msg, true);
                 
                 if (conversationMode === 'continuous') {
-                    updateStatus('✅ Done! Keep talking or say "stop" to end');
+                    updateStatus('✅ Done! Keep talking!');
                     setTimeout(() => {
                         if (!isListening && conversationMode === 'continuous' && !isExplaining) {
                             try {
                                 recognition.start();
-                                console.log('✅ Mic restarted after search');
                             } catch(e) {}
                         }
                     }, 2000);
                 } else {
-                    updateStatus('✅ Done! Results ready to save');
+                    updateStatus('✅ Done!');
                 }
                 
             } catch (error) {
@@ -1517,25 +1225,23 @@
 
         function saveAsWord() {
             if (!searchResults.length) { alert('No results'); return; }
-            alert('Word save with images - feature active');
+            alert('Word save feature active');
         }
 
         function saveAsPDF() {
             if (!searchResults.length) { alert('No results'); return; }
-            alert('PDF save with images - feature active');
+            alert('PDF save feature active');
         }
 
         function saveAsText() {
             if (!searchResults.length) { alert('No results'); return; }
             let content = `ANJALEE RESULTS - ${countryNames[selectedCountry]}\n\n`;
             searchResults.forEach((r, i) => {
-                content += `${i+1}. ${r.title}\n   Price: ${r.price}\n   Location: ${r.location}\n   Contact: ${r.contact}\n   URL: ${r.fullUrl}\n`;
-                if (r.imageUrl) content += `   Image: ${r.imageUrl}\n`;
-                content += '\n';
+                content += `${i+1}. ${r.title}\n   Price: ${r.price}\n   Location: ${r.location}\n   Contact: ${r.contact}\n   URL: ${r.fullUrl}\n\n`;
             });
             const blob = new Blob([content], { type: 'text/plain' });
             saveAs(blob, `anjalee-${Date.now()}.txt`);
-            alert('✅ Text saved with image URLs!');
+            alert('✅ Text saved!');
         }
     </script>
 </body>

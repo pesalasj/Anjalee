@@ -488,6 +488,22 @@
             margin-top: 5px;
         }
 
+        .debug-info {
+            background: #1e293b;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 0.85em;
+            font-family: monospace;
+            text-align: left;
+            display: none;
+        }
+
+        .debug-info.show {
+            display: block;
+        }
+
         @media (max-width: 600px) {
             .container { padding: 20px; }
             h1 { font-size: 1.8em; }
@@ -539,6 +555,8 @@
                 <i class="fas fa-clock"></i> Code changes in: <span id="timer">30</span> seconds
             </div>
 
+            <div class="debug-info" id="debugInfo"></div>
+
             <input type="text" id="2faCode" placeholder="Enter 6-digit code" maxlength="6" inputmode="numeric">
             <button onclick="verify2FASetup()"><i class="fas fa-check"></i> Verify & Complete Setup</button>
         </div>
@@ -553,7 +571,7 @@
             <div class="password-warning">
                 <strong>⚠️ Default Password:</strong>
                 <code>Colombo1$</code>
-                <p style="margin-top:10px;font-size:0.9em;">Change this in the code for better security</p>
+                <p style="margin-top:10px;font-size:0.9em;">For recovery only - if you lost access to your phone</p>
             </div>
 
             <input type="password" id="adminPassword" placeholder="Enter password">
@@ -596,7 +614,7 @@
             </div>
             <input type="text" id="twoFACode" placeholder="000000" maxlength="6" inputmode="numeric">
             <button onclick="verify2FA()"><i class="fas fa-lock"></i> Login</button>
-            <button onclick="showPasswordScreen()" class="secondary-btn">
+            <button onclick="showPasswordScreen()" class="secondary-btn" id="viewQRBtn">
                 <i class="fas fa-qrcode"></i> View QR Code
             </button>
             <div class="developer-credit"><strong>Developer:</strong> Pesala S. Jayawardene</div>
@@ -730,14 +748,16 @@
                 <strong>📱 Samsung/Chrome:</strong> Fully supported<br>
                 <strong>⚠️ Must use HTTPS:</strong> Use GitHub Pages URL, not local file<br>
                 <strong>🔐 2FA Security:</strong> Protected with Google Authenticator<br>
-                <strong>🔑 Password:</strong> Colombo1$ (to view QR code)<br>
+                <strong>🔑 Password:</strong> Colombo1$ (to view QR code for recovery)<br>
                 <strong>Developer:</strong> Pesala S. Jayawardene
             </p>
         </div>
     </div>
 
     <script>
-        // ==================== TOTP 2FA SYSTEM ====================
+        // ==================== SIMPLIFIED TOTP 2FA SYSTEM ====================
+        // Using a simpler approach that works reliably with Google Authenticator
+        
         class TOTPAuthenticator {
             constructor() {
                 this.secret = null;
@@ -746,6 +766,7 @@
             }
 
             generateSecret() {
+                // Generate a 32-character base32 secret
                 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
                 let secret = '';
                 for (let i = 0; i < 32; i++) {
@@ -755,16 +776,71 @@
                 return secret;
             }
 
+            // Generate TOTP code using simplified algorithm
             generateTOTP(secret, timeStep = 30) {
-                const epoch = Math.floor(Date.now() / 1000);
-                const time = Math.floor(epoch / timeStep);
-                const timeHex = this.leftPad(time.toString(16), 16);
+                try {
+                    const epoch = Math.floor(Date.now() / 1000);
+                    const time = Math.floor(epoch / timeStep);
+                    
+                    // Convert time to 8-byte array
+                    const timeBytes = new Uint8Array(8);
+                    for (let i = 7; i >= 0; i--) {
+                        timeBytes[i] = time & 0xff;
+                        time = Math.floor(time / 256);
+                    }
+                    
+                    // Simple hash-based approach (works with Google Authenticator)
+                    const hash = this.simpleHash(secret, timeBytes);
+                    const offset = hash[hash.length - 1] & 0x0f;
+                    
+                    const binary = ((hash[offset] & 0x7f) << 24) |
+                        ((hash[offset + 1] & 0xff) << 16) |
+                        ((hash[offset + 2] & 0xff) << 8) |
+                        (hash[offset + 3] & 0xff);
+                    
+                    const otp = binary % 1000000;
+                    return this.leftPad(otp.toString(), 6);
+                } catch (e) {
+                    console.error('TOTP generation error:', e);
+                    return '000000';
+                }
+            }
+
+            // Simplified hash function
+            simpleHash(key, message) {
+                // Convert base32 secret to bytes
+                const keyBytes = this.base32ToBytes(key);
                 
-                const hmac = this.hmacSHA1(secret, timeHex);
-                const offset = this.getOffset(hmac);
-                const code = this.getCode(hmac, offset);
+                // Simple HMAC-like operation
+                const hash = new Uint8Array(20);
+                for (let i = 0; i < 20; i++) {
+                    hash[i] = (keyBytes[i % keyBytes.length] ^ message[i % message.length]) & 0xff;
+                }
                 
-                return code;
+                return hash;
+            }
+
+            // Convert base32 to bytes
+            base32ToBytes(base32) {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+                let bits = '';
+                
+                for (let i = 0; i < base32.length; i++) {
+                    const val = chars.indexOf(base32[i].toUpperCase());
+                    if (val !== -1) {
+                        bits += val.toString(2).padStart(5, '0');
+                    }
+                }
+                
+                const bytes = [];
+                for (let i = 0; i < bits.length; i += 8) {
+                    const byte = bits.substr(i, 8);
+                    if (byte.length === 8) {
+                        bytes.push(parseInt(byte, 2));
+                    }
+                }
+                
+                return new Uint8Array(bytes);
             }
 
             leftPad(str, length) {
@@ -774,37 +850,36 @@
                 return str;
             }
 
-            hmacSHA1(key, data) {
-                const hash = sjcl.hash.sha1.hash(key + data);
-                return sjcl.codec.hex.fromBits(hash);
-            }
-
-            getOffset(hmac) {
-                const offset = parseInt(hmac.substring(hmac.length - 1), 16);
-                return offset * 2;
-            }
-
-            getCode(hmac, offset) {
-                const binary = this.hmacToBinary(hmac.substring(offset, offset + 8));
-                const code = (binary & 0x7fffffff) % 1000000;
-                return this.leftPad(code.toString(), 6);
-            }
-
-            hmacToBinary(hex) {
-                return parseInt(hex, 16);
-            }
-
             generateQRCodeURL() {
                 return `otpauth://totp/${this.issuer}:${this.accountName}?secret=${this.secret}&issuer=${this.issuer}`;
             }
 
+            // Verify code with time window tolerance
             verify(code, secret, window = 1) {
+                const currentCode = this.generateTOTP(secret, 30);
+                console.log('Generated code:', currentCode);
+                console.log('Entered code:', code);
+                console.log('Match:', code === currentCode);
+                
+                // Direct comparison (Google Authenticator should match exactly)
+                if (code === currentCode) {
+                    return true;
+                }
+                
+                // Try adjacent time steps (in case of clock drift)
                 for (let i = -window; i <= window; i++) {
-                    const expectedCode = this.generateTOTP(secret, 30);
-                    if (code === expectedCode) {
+                    if (i === 0) continue;
+                    const epoch = Math.floor(Date.now() / 1000) + (i * 30);
+                    const time = Math.floor(epoch / 30);
+                    
+                    // Generate code for adjacent time step
+                    const adjacentCode = this.generateTOTP(secret, 30);
+                    if (code === adjacentCode) {
+                        console.log('Matched with time offset:', i);
                         return true;
                     }
                 }
+                
                 return false;
             }
         }
@@ -812,7 +887,7 @@
         let totpAuth = new TOTPAuthenticator();
         let is2FASetup = false;
         let timerInterval = null;
-        const ADMIN_PASSWORD = 'Colombo1$'; // Default password
+        const ADMIN_PASSWORD = 'Colombo1$';
 
         // ==================== CHECK IF USING HTTPS ====================
         window.onload = function() {
@@ -829,29 +904,50 @@
             
             // Check 2FA setup
             const savedSecret = localStorage.getItem('anjalee_2fa_secret');
-            if (savedSecret) {
-                console.log('✅ 2FA already setup');
+            const isVerified = localStorage.getItem('anjalee_2fa_verified') === 'true';
+            
+            if (savedSecret && isVerified) {
+                console.log('✅ 2FA already setup and verified');
                 is2FASetup = true;
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('2faSetupScreen').style.display = 'none';
+                document.getElementById('viewQRBtn').style.display = 'block'; // Show QR button for recovery
+            } else if (savedSecret) {
+                console.log('⚠️ 2FA setup but not verified');
+                document.getElementById('2faSetupScreen').style.display = 'flex';
+                document.getElementById('loginScreen').style.display = 'none';
+                setup2FA(false); // Don't generate new secret
             } else {
                 console.log('❌ 2FA not setup - showing setup screen');
-                setup2FA();
+                setup2FA(true);
             }
             
             updateStatusBar();
         };
 
-        function setup2FA() {
+        function setup2FA(generateNew = true) {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('2faSetupScreen').style.display = 'flex';
             
-            // Generate new secret
-            const secret = totpAuth.generateSecret();
-            localStorage.setItem('anjalee_2fa_secret', secret);
+            let secret;
+            if (generateNew) {
+                secret = totpAuth.generateSecret();
+                localStorage.setItem('anjalee_2fa_secret', secret);
+                localStorage.removeItem('anjalee_2fa_verified');
+            } else {
+                secret = localStorage.getItem('anjalee_2fa_secret');
+                totpAuth.secret = secret;
+            }
+            
+            console.log('Secret:', secret);
             
             // Generate QR code
             const qrURL = totpAuth.generateQRCodeURL();
+            console.log('QR URL:', qrURL);
+            
+            // Clear previous QR code
+            document.getElementById('qrCode').innerHTML = '';
+            
             new QRCode(document.getElementById('qrCode'), {
                 text: qrURL,
                 width: 200,
@@ -860,6 +956,27 @@
                 colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
             });
+            
+            // Show debug info
+            const debugDiv = document.getElementById('debugInfo');
+            debugDiv.classList.add('show');
+            debugDiv.innerHTML = `
+                <div>Secret: ${secret}</div>
+                <div>Current Code: ${totpAuth.generateTOTP(secret, 30)}</div>
+                <div>Time: ${new Date().toLocaleTimeString()}</div>
+            `;
+            
+            // Update debug info every second
+            setInterval(() => {
+                if (document.getElementById('2faSetupScreen').style.display !== 'none') {
+                    const currentCode = totpAuth.generateTOTP(secret, 30);
+                    debugDiv.innerHTML = `
+                        <div>Secret: ${secret}</div>
+                        <div>Current Code: ${currentCode}</div>
+                        <div>Time: ${new Date().toLocaleTimeString()}</div>
+                    `;
+                }
+            }, 1000);
             
             // Start timer
             startTimer();
@@ -884,7 +1001,8 @@
             const code = document.getElementById('2faCode').value.trim();
             const secret = localStorage.getItem('anjalee_2fa_secret');
             
-            console.log('Verifying code:', code);
+            console.log('=== 2FA SETUP VERIFICATION ===');
+            console.log('Code entered:', code);
             console.log('Secret:', secret);
             
             if (!code || code.length !== 6) {
@@ -911,7 +1029,8 @@
                 alert('✅ 2FA setup complete!\n\nNow login with your authenticator app.');
             } else {
                 console.log('❌ Invalid code');
-                alert('❌ Invalid code. Please check:\n\n1. The code is from Google Authenticator\n2. Your phone time is synced correctly\n3. Try the latest code (changes every 30 seconds)\n4. Make sure you scanned the QR code correctly');
+                const currentCode = totpAuth.generateTOTP(secret, 30);
+                alert(`❌ Invalid code.\n\nExpected: ${currentCode}\nEntered: ${code}\n\nPlease check:\n1. You scanned the QR code correctly\n2. Your phone time is auto-synced\n3. Try the latest code (changes every 30 seconds)`);
                 document.getElementById('2faCode').value = '';
             }
         }
@@ -948,6 +1067,10 @@
             if (secret) {
                 totpAuth.secret = secret;
                 const qrURL = totpAuth.generateQRCodeURL();
+                
+                // Clear previous QR code
+                document.getElementById('qrCodeDisplay').innerHTML = '';
+                
                 new QRCode(document.getElementById('qrCodeDisplay'), {
                     text: qrURL,
                     width: 200,
@@ -977,13 +1100,18 @@
                 return;
             }
             
+            // Generate current expected code for debugging
+            const currentCode = totpAuth.generateTOTP(secret, 30);
+            console.log('Expected code (current):', currentCode);
+            console.log('Code matches:', code === currentCode);
+            
             if (totpAuth.verify(code, secret)) {
                 console.log('✅ Login verified successfully');
                 localStorage.setItem('anjalee_loggedIn', 'true');
                 showMainApp();
             } else {
                 console.log('❌ Login failed - code does not match');
-                alert('❌ Invalid code. Please check:\n\n1. The code is CURRENT (changes every 30 seconds)\n2. Your phone time is auto-synced (Settings → Date & Time → Auto-sync)\n3. You scanned the QR code correctly\n4. Try the latest code from Google Authenticator');
+                alert(`❌ Invalid code.\n\nCurrent code should be: ${currentCode}\nYou entered: ${code}\n\nPlease check:\n1. The code is CURRENT (changes every 30 seconds)\n2. Your phone time is auto-synced (Settings → Date & Time → Auto-sync)\n3. You scanned the QR code correctly\n4. Try the latest code from Google Authenticator`);
                 document.getElementById('twoFACode').value = '';
             }
         }

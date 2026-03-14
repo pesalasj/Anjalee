@@ -521,11 +521,12 @@ let isDictating = false;
 let currentSpeaker = 'Unknown';
 let speakers = {};
 let dictationText = '';
-let enrollmentComplete = false;
+let enrollmentMode = true;
 
 // Discussion variables
-let discussionStarted = false;
-let lastDiscussionResponse = '';
+let userPreferences = {};
+let conversationStarted = false;
+let lastQuestionAsked = '';
 
 window.onload = function() {
 console.log('=== Anjalee Voice Assistant ===');
@@ -633,26 +634,26 @@ const dictationSection = document.getElementById('dictationSection');
 if (mode === 'continuous') {
 info.innerHTML = '<strong>✅ Continuous Mode:</strong> Just keep talking.';
 dictationSection.style.display = 'none';
-discussionStarted = false;
 } else if (mode === 'save') {
 info.innerHTML = '<strong>💾 Save Mode:</strong> Say "Anjalee" before each search.';
 dictationSection.style.display = 'none';
-discussionStarted = false;
 } else if (mode === 'discussion') {
-info.innerHTML = '<strong>💬 Discussion Mode:</strong> I\'ll chat with you! Ask me anything or say "search for" to find info online.';
+info.innerHTML = '<strong>💬 Discussion Mode:</strong> I\'ll learn about you and answer your questions!';
 dictationSection.style.display = 'none';
-discussionStarted = false;
-speak('Hello! I\'m ready to chat with you. Ask me anything, or say "search for" followed by your topic to find information online.', true);
-updateStatus('💬 Discussion mode - Start chatting!');
+conversationStarted = false;
+userPreferences = {};
+speak('Hello! I\'d love to get to know you. What are you interested in today?', true);
+updateStatus('💬 Discussion - Tell me about yourself');
 } else {
-info.innerHTML = '<strong>📝 Dictation Mode:</strong> Say "I am" followed by your name to identify yourself. Say "Start dictating" when ready.';
+info.innerHTML = '<strong>📝 Dictation Mode:</strong> Say "I am" followed by your name. Say "Start dictating" when ready.';
 dictationSection.style.display = 'block';
-discussionStarted = false;
-enrollmentComplete = false;
+enrollmentMode = true;
 isDictating = false;
+currentSpeaker = 'Unknown';
+speakers = {};
 dictationText = '';
 document.getElementById('dictationText').innerHTML = 'Dictated text will appear here...';
-speak('Dictation mode activated. Please say "I am" followed by your name to identify yourself.', true);
+speak('Dictation mode. Please say "I am" followed by your name to identify yourself.', true);
 updateStatus('🎤 Recognizing voices - Say "I am [name]"');
 }
 }
@@ -698,7 +699,8 @@ if (confirm('Clear all dictated text?')) {
 dictationText = '';
 speakers = {};
 currentSpeaker = 'Unknown';
-enrollmentComplete = false;
+enrollmentMode = true;
+isDictating = false;
 document.getElementById('dictationText').innerHTML = 'Dictated text will appear here...';
 speak('Dictation cleared.', true);
 updateStatus('🎤 Dictation cleared - Say "I am [name]"');
@@ -956,11 +958,28 @@ speak('Sorry, could not search right now.', true);
 }
 }
 
-// ==================== DISCUSSION MODE ====================
+// ==================== DISCUSSION MODE - INTELLIGENT CONVERSATION ====================
 async function handleDiscussion(userInput) {
 const lowerInput = userInput.toLowerCase();
 
 console.log('💬 Discussion input:', userInput);
+
+// If conversation hasn't started, initiate learning about user
+if (!conversationStarted) {
+conversationStarted = true;
+// Ask about user interests
+const questions = [
+"What brings you here today?",
+"What are you interested in learning about?",
+"Is there something specific you'd like to know?",
+"How can I help you today?"
+];
+const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+speak(randomQuestion, true);
+lastQuestionAsked = randomQuestion;
+updateStatus('💬 Listening to your response...');
+return;
+}
 
 // Check for explicit search requests
 const searchTriggers = [
@@ -993,7 +1012,6 @@ if (data.organic && data.organic.length > 0) {
 const result = data.organic[0];
 const answer = `${result.title}. ${result.snippet}`;
 speak(answer, true);
-lastDiscussionResponse = answer;
 updateStatus('💬 Ready for next question');
 console.log('✅ Found answer:', answer);
 } else {
@@ -1006,24 +1024,48 @@ updateStatus('❌ Search error');
 console.log('❌ Search error:', error);
 }
 } else {
-// Respond conversationally
+// Learn about user preferences and respond conversationally
+const lower = lowerInput;
+
+// Capture user preferences
+if (lower.includes('i like') || lower.includes('i prefer') || lower.includes('my favorite') || lower.includes('i love')) {
+const prefMatch = lowerInput.match(/(?:i like|i prefer|my favorite|i love)\s+(.+)/i);
+if (prefMatch) {
+const preference = prefMatch[1].trim();
+userPreferences[preference.toLowerCase()] = true;
+const response = `Great! I've noted that you like ${preference}. Is there anything specific about ${preference} you'd like to know?`;
+speak(response, true);
+updateStatus('💬 Noted your preference');
+console.log('✅ Learned preference:', preference);
+return;
+}
+}
+
+// Respond to questions
+if (lower.includes('?') || lower.includes('what') || lower.includes('how') || lower.includes('why') || lower.includes('when') || lower.includes('who')) {
+// It's a question - try to answer or search
+const response = `That's a good question about "${userInput}". Would you like me to search the internet for the answer? Just say "search for ${userInput}" and I'll find it for you.`;
+speak(response, true);
+updateStatus('💬 Ask me to search for more info');
+return;
+}
+
+// Greetings and acknowledgments
 const responses = {
-'hello': 'Hello! How can I help you today?',
-'hi': 'Hi there! What would you like to know?',
-'hey': 'Hey! I\'m here to help. What\'s on your mind?',
-'thank': 'You\'re welcome! Is there anything else you\'d like to know?',
+'hello': 'Hello! Nice to chat with you. What would you like to talk about?',
+'hi': 'Hi there! I\'m here to help. What\'s on your mind?',
+'hey': 'Hey! How can I assist you today?',
+'thank': 'You\'re welcome! Is there anything else you\'d like to discuss?',
 'thanks': 'My pleasure! Feel free to ask me anything.',
 'how are you': 'I\'m doing well, thank you! Ready to help you with your questions.',
-'what can you do': 'I can search the internet, answer questions, and help you find information. Just ask!',
 'bye': 'Goodbye! Feel free to come back anytime you have questions.',
 'goodbye': 'Take care! I\'m here whenever you need help.'
 };
 
 let responded = false;
 for (const [key, response] of Object.entries(responses)) {
-if (lowerInput.includes(key)) {
+if (lower.includes(key)) {
 speak(response, true);
-lastDiscussionResponse = response;
 responded = true;
 console.log('✅ Conversational response:', response);
 break;
@@ -1031,10 +1073,9 @@ break;
 }
 
 if (!responded) {
-// If no match, ask if they want to search
-const followUp = 'I understand. Would you like me to search the internet for more information? Just say "search for" followed by your topic.';
+// Default response that encourages more conversation
+const followUp = 'I understand. Tell me more about what you\'re looking for, or ask me to search for something specific.';
 speak(followUp, true);
-lastDiscussionResponse = followUp;
 console.log('✅ Follow-up response:', followUp);
 }
 
@@ -1086,7 +1127,7 @@ isListening = true;
 isProcessing = false;
 
 if (conversationMode === 'dictation') {
-if (!enrollmentComplete) {
+if (enrollmentMode) {
 updateStatus('🎤 Recognizing voices - Say "I am [name]"');
 } else if (!isDictating) {
 updateStatus('🎤 Dictation - Say "Start dictating"');
@@ -1270,14 +1311,14 @@ updateStatus('Error: ' + event.error);
 console.log('✅ Recognition initialized');
 }
 
-// ==================== DICTATION HANDLER ====================
+// ==================== DICTATION HANDLER - FIXED ====================
 function handleDictation(text) {
 const lower = text.toLowerCase();
 
-console.log('📝 Dictation processing:', text, 'enrollmentComplete:', enrollmentComplete, 'isDictating:', isDictating);
+console.log('📝 Dictation processing:', text, 'enrollmentMode:', enrollmentMode, 'isDictating:', isDictating);
 
 // Check for speaker identification (continue until "start dictating")
-if (!enrollmentComplete && lower.includes('i am')) {
+if (enrollmentMode && lower.includes('i am')) {
 const nameMatch = text.match(/i am\s+(.+)/i);
 if (nameMatch) {
 const name = nameMatch[1].trim();
@@ -1293,11 +1334,12 @@ isProcessing = false;
 return;
 }
 
-// Check for start commands
+// Check for start commands - THIS IS THE KEY FIX
 if (lower.includes('start dictating') || lower.includes('start typing')) {
+console.log('🎯 Start command detected');
 if (!isDictating) {
 isDictating = true;
-enrollmentComplete = true;
+enrollmentMode = false; // Stop enrollment, start dictating
 speak('Dictation started. Speak your text. Say "new paragraph" for a new paragraph. Say "stop" when done.', true);
 updateStatus('📝 Dictating...');
 console.log('✅ Dictation started');
@@ -1310,7 +1352,7 @@ return;
 
 // Only process dictation if actively dictating
 if (!isDictating) {
-console.log('⏸️ Not dictating yet');
+console.log('⏸️ Not dictating yet - waiting for start command');
 isProcessing = false;
 return;
 }

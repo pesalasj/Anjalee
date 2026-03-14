@@ -350,7 +350,6 @@ h1 { font-size: 1.8em; }
 <p style="font-size:1em;opacity:0.95;">Professional Voice Assistant</p>
 <div class="developer-credit"><strong>Developer:</strong> Pesala S. Jayawardene</div>
 </div>
-<!-- Status Bar - Shows what's saved -->
 <div class="status-bar" id="statusBar">
 <i class="fas fa-check-circle"></i> <span id="statusBarText">Checking saved data...</span>
 </div>
@@ -488,7 +487,7 @@ h1 { font-size: 1.8em; }
 </div>
 </div>
 <script>
-// ==================== FIXED STATE MANAGEMENT ====================
+// ==================== STATE MANAGEMENT ====================
 const AppState = {
 getApiKey: function() {
 return localStorage.getItem('anjalee_apiKey') || '';
@@ -522,8 +521,11 @@ let isDictating = false;
 let currentSpeaker = 'Unknown';
 let speakers = {};
 let dictationText = '';
-let voiceEnrollmentMode = false;
 let enrollmentComplete = false;
+
+// Discussion variables
+let discussionStarted = false;
+let lastDiscussionResponse = '';
 
 window.onload = function() {
 console.log('=== Anjalee Voice Assistant ===');
@@ -631,16 +633,26 @@ const dictationSection = document.getElementById('dictationSection');
 if (mode === 'continuous') {
 info.innerHTML = '<strong>✅ Continuous Mode:</strong> Just keep talking.';
 dictationSection.style.display = 'none';
+discussionStarted = false;
 } else if (mode === 'save') {
 info.innerHTML = '<strong>💾 Save Mode:</strong> Say "Anjalee" before each search.';
 dictationSection.style.display = 'none';
+discussionStarted = false;
 } else if (mode === 'discussion') {
-info.innerHTML = '<strong>💬 Discussion Mode:</strong> Ask questions naturally. Say "search for" to find info online.';
+info.innerHTML = '<strong>💬 Discussion Mode:</strong> I\'ll chat with you! Ask me anything or say "search for" to find info online.';
 dictationSection.style.display = 'none';
+discussionStarted = false;
+speak('Hello! I\'m ready to chat with you. Ask me anything, or say "search for" followed by your topic to find information online.', true);
+updateStatus('💬 Discussion mode - Start chatting!');
 } else {
-info.innerHTML = '<strong>📝 Dictation Mode:</strong> Say "Start dictating" when ready. Say "I am" followed by your name to identify yourself.';
+info.innerHTML = '<strong>📝 Dictation Mode:</strong> Say "I am" followed by your name to identify yourself. Say "Start dictating" when ready.';
 dictationSection.style.display = 'block';
-speak('Dictation mode activated. Say "I am" followed by your name to identify yourself. When ready, say "Start dictating".', true);
+discussionStarted = false;
+enrollmentComplete = false;
+isDictating = false;
+dictationText = '';
+document.getElementById('dictationText').innerHTML = 'Dictated text will appear here...';
+speak('Dictation mode activated. Please say "I am" followed by your name to identify yourself.', true);
 updateStatus('🎤 Recognizing voices - Say "I am [name]"');
 }
 }
@@ -757,6 +769,8 @@ dictationText += speaker + ': ' + text + '\n\n';
 // Auto-scroll to bottom
 const dictationArea = document.getElementById('dictationArea');
 dictationArea.scrollTop = dictationArea.scrollHeight;
+
+console.log('✅ Added to dictation:', speaker, '-', text);
 }
 
 // ==================== VOICE SYSTEM ====================
@@ -942,6 +956,92 @@ speak('Sorry, could not search right now.', true);
 }
 }
 
+// ==================== DISCUSSION MODE ====================
+async function handleDiscussion(userInput) {
+const lowerInput = userInput.toLowerCase();
+
+console.log('💬 Discussion input:', userInput);
+
+// Check for explicit search requests
+const searchTriggers = [
+'search for', 'find', 'look up', 'google', 'what is', 'who is', 
+'where is', 'how to', 'show me', 'tell me about', 'information about',
+'news about', 'latest', 'current', 'recent', 'explain', 'define'
+];
+
+const wantsSearch = searchTriggers.some(trigger => lowerInput.includes(trigger));
+
+if (wantsSearch) {
+// Search the internet
+updateStatus('💬 Searching internet...');
+console.log('🔍 Searching for:', userInput);
+
+try {
+const response = await fetch('https://google.serper.dev/search', {
+method: 'POST',
+headers: {
+'X-API-KEY': AppState.getApiKey(),
+'Content-Type': 'application/json'
+},
+body: JSON.stringify({ q: userInput, num: 3 })
+});
+
+if (!response.ok) throw new Error('API error');
+const data = await response.json();
+
+if (data.organic && data.organic.length > 0) {
+const result = data.organic[0];
+const answer = `${result.title}. ${result.snippet}`;
+speak(answer, true);
+lastDiscussionResponse = answer;
+updateStatus('💬 Ready for next question');
+console.log('✅ Found answer:', answer);
+} else {
+speak('I could not find information about that. Please try asking differently.', true);
+updateStatus('💬 No results found');
+}
+} catch (error) {
+speak('Sorry, I could not search right now. Please try again.', true);
+updateStatus('❌ Search error');
+console.log('❌ Search error:', error);
+}
+} else {
+// Respond conversationally
+const responses = {
+'hello': 'Hello! How can I help you today?',
+'hi': 'Hi there! What would you like to know?',
+'hey': 'Hey! I\'m here to help. What\'s on your mind?',
+'thank': 'You\'re welcome! Is there anything else you\'d like to know?',
+'thanks': 'My pleasure! Feel free to ask me anything.',
+'how are you': 'I\'m doing well, thank you! Ready to help you with your questions.',
+'what can you do': 'I can search the internet, answer questions, and help you find information. Just ask!',
+'bye': 'Goodbye! Feel free to come back anytime you have questions.',
+'goodbye': 'Take care! I\'m here whenever you need help.'
+};
+
+let responded = false;
+for (const [key, response] of Object.entries(responses)) {
+if (lowerInput.includes(key)) {
+speak(response, true);
+lastDiscussionResponse = response;
+responded = true;
+console.log('✅ Conversational response:', response);
+break;
+}
+}
+
+if (!responded) {
+// If no match, ask if they want to search
+const followUp = 'I understand. Would you like me to search the internet for more information? Just say "search for" followed by your topic.';
+speak(followUp, true);
+lastDiscussionResponse = followUp;
+console.log('✅ Follow-up response:', followUp);
+}
+
+updateStatus('💬 Listening...');
+}
+}
+
 // ==================== MIC SYSTEM ====================
 let recognition = null;
 let isListening = false;
@@ -988,8 +1088,6 @@ isProcessing = false;
 if (conversationMode === 'dictation') {
 if (!enrollmentComplete) {
 updateStatus('🎤 Recognizing voices - Say "I am [name]"');
-speak('Recognizing voices. Please say "I am" followed by your name.', true);
-voiceEnrollmentMode = true;
 } else if (!isDictating) {
 updateStatus('🎤 Dictation - Say "Start dictating"');
 } else {
@@ -1021,30 +1119,23 @@ console.log('Auto-restart failed:', e.message);
 }
 }
 }, 1000);
-} else if (conversationMode === 'dictation' && !enrollmentComplete) {
-// Keep listening for speaker identification
-setTimeout(() => {
-if (!isListening && !enrollmentComplete) {
-try {
-recognition.start();
-} catch (e) {}
-}
-}, 1000);
-} else if (conversationMode === 'dictation' && isDictating) {
-// Keep listening while dictating
-setTimeout(() => {
-if (!isListening && isDictating) {
-try {
-recognition.start();
-} catch (e) {}
-}
-}, 1000);
-} else if (conversationMode === 'discussion') {
-// Keep listening in discussion mode
+} else if (conversationMode === 'dictation') {
+// Always keep listening in dictation mode
 setTimeout(() => {
 if (!isListening) {
 try {
 recognition.start();
+console.log('✅ Dictation mic restarted');
+} catch (e) {}
+}
+}, 1000);
+} else if (conversationMode === 'discussion') {
+// Always keep listening in discussion mode
+setTimeout(() => {
+if (!isListening) {
+try {
+recognition.start();
+console.log('✅ Discussion mic restarted');
 } catch (e) {}
 }
 }, 1000);
@@ -1057,18 +1148,19 @@ const currentTime = Date.now();
 
 console.log('🎤 Heard:', text);
 
-// Handle dictation mode
+// Handle dictation mode FIRST
 if (conversationMode === 'dictation') {
 handleDictation(text);
 return;
 }
 
-// Handle discussion mode
+// Handle discussion mode SECOND
 if (conversationMode === 'discussion') {
 handleDiscussion(text);
 return;
 }
 
+// Handle other modes
 if (isExplaining) {
 const lowerText = text.toLowerCase();
 if (lowerText.includes('anjalee') || lowerText.includes('stop')) {
@@ -1178,88 +1270,24 @@ updateStatus('Error: ' + event.error);
 console.log('✅ Recognition initialized');
 }
 
-// ==================== DISCUSSION MODE ====================
-async function handleDiscussion(userInput) {
-const lowerInput = userInput.toLowerCase();
-
-// Check for explicit search requests
-const searchTriggers = [
-'search for', 'find', 'look up', 'google', 'what is', 'who is', 
-'where is', 'how to', 'show me', 'tell me about', 'information about',
-'news about', 'latest', 'current', 'recent'
-];
-
-const wantsSearch = searchTriggers.some(trigger => lowerInput.includes(trigger));
-
-if (wantsSearch) {
-// Search the internet
-updateStatus('💬 Searching internet...');
-
-try {
-const response = await fetch('https://google.serper.dev/search', {
-method: 'POST',
-headers: {
-'X-API-KEY': AppState.getApiKey(),
-'Content-Type': 'application/json'
-},
-body: JSON.stringify({ q: userInput, num: 3 })
-});
-
-if (!response.ok) throw new Error('API error');
-const data = await response.json();
-
-if (data.organic && data.organic.length > 0) {
-const result = data.organic[0];
-const answer = `${result.title}. ${result.snippet}`;
-speak(answer, true);
-updateStatus('💬 Ready for next question');
-} else {
-speak('I could not find information about that.', true);
-}
-} catch (error) {
-speak('Sorry, I could not search right now.', true);
-updateStatus('❌ Search error');
-}
-} else {
-// Just respond conversationally
-const responses = {
-'hello': 'Hello! How can I help you today?',
-'hi': 'Hi there! What would you like to know?',
-'thank': 'You\'re welcome! Is there anything else?',
-'how are you': 'I\'m doing well, thank you! Ready to help.',
-'bye': 'Goodbye! Feel free to ask more questions anytime.'
-};
-
-let responded = false;
-for (const [key, response] of Object.entries(responses)) {
-if (lowerInput.includes(key)) {
-speak(response, true);
-responded = true;
-break;
-}
-}
-
-if (!responded) {
-speak('I understand. Would you like me to search the internet for more information? Just say "search for" followed by your topic.', true);
-}
-
-updateStatus('💬 Listening...');
-}
-}
-
 // ==================== DICTATION HANDLER ====================
 function handleDictation(text) {
 const lower = text.toLowerCase();
+
+console.log('📝 Dictation processing:', text, 'enrollmentComplete:', enrollmentComplete, 'isDictating:', isDictating);
 
 // Check for speaker identification (continue until "start dictating")
 if (!enrollmentComplete && lower.includes('i am')) {
 const nameMatch = text.match(/i am\s+(.+)/i);
 if (nameMatch) {
 const name = nameMatch[1].trim();
+if (name && name.length > 1) {
 currentSpeaker = name;
 speakers[name] = true;
-speak(`Welcome, ${name}. You can say "Start dictating" when ready, or identify more speakers.`, true);
+speak(`Welcome, ${name}. You can identify more speakers or say "Start dictating" when ready.`, true);
 updateStatus(`👤 Speaker identified: ${name} - Say "Start dictating" or "I am [name]"`);
+console.log('✅ Speaker enrolled:', name);
+}
 }
 isProcessing = false;
 return;
@@ -1272,6 +1300,9 @@ isDictating = true;
 enrollmentComplete = true;
 speak('Dictation started. Speak your text. Say "new paragraph" for a new paragraph. Say "stop" when done.', true);
 updateStatus('📝 Dictating...');
+console.log('✅ Dictation started');
+} else {
+speak('Already dictating. Continue speaking.', true);
 }
 isProcessing = false;
 return;
@@ -1279,6 +1310,7 @@ return;
 
 // Only process dictation if actively dictating
 if (!isDictating) {
+console.log('⏸️ Not dictating yet');
 isProcessing = false;
 return;
 }
@@ -1288,6 +1320,7 @@ if (lower.includes('stop') || lower.includes('end') || lower.includes('end typin
 isDictating = false;
 speak('Dictation stopped. You can export or send via WhatsApp.', true);
 updateStatus('✅ Dictation stopped');
+console.log('✅ Dictation stopped');
 isProcessing = false;
 return;
 }
@@ -1303,6 +1336,7 @@ return;
 // Add to dictation if text is meaningful
 if (text.length > 2) {
 addToDictation(text, currentSpeaker);
+console.log('✅ Added to dictation:', text);
 }
 
 isProcessing = false;

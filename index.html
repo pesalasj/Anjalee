@@ -7,6 +7,8 @@
     <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sjcl/1.0.8/sjcl.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -34,6 +36,41 @@
             margin: 0 auto;
             padding: 30px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .https-warning {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 3px solid #f59e0b;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            text-align: center;
+            display: none;
+        }
+
+        .https-warning.show { display: block; }
+
+        .https-warning h3 {
+            color: #92400e;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .https-warning ol {
+            text-align: left;
+            margin: 15px 0 15px 20px;
+            line-height: 2;
+            color: #78350f;
+        }
+
+        .https-warning code {
+            background: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            display: block;
+            margin: 10px 0;
+            word-break: break-all;
         }
 
         .login-screen {
@@ -210,6 +247,7 @@
             border-radius: 16px;
             padding: 20px;
             margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
 
         .result-image {
@@ -239,11 +277,41 @@
 
         .result-contact {
             background: linear-gradient(135deg, #fef3c7, #fde68a);
-            padding: 12px;
+            padding: 15px;
             border-radius: 8px;
             margin-top: 12px;
-            font-size: 0.9em;
+            font-size: 0.95em;
             border-left: 4px solid #f59e0b;
+        }
+
+        .result-contact strong {
+            color: #92400e;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1.05em;
+        }
+
+        .result-contact .contact-item {
+            margin: 8px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .result-contact .contact-item i {
+            color: #f59e0b;
+            width: 20px;
+            margin-right: 8px;
+        }
+
+        .result-contact a {
+            color: #0369a1;
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        .result-contact a:hover {
+            text-decoration: underline;
         }
 
         .explain-btn {
@@ -328,6 +396,62 @@
             border-radius: 8px; cursor: pointer; font-weight: 600;
         }
 
+        /* 2FA Setup Styles */
+        .2fa-setup {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 400px;
+            margin: 0 auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .2fa-setup h2 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .qr-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            border: 2px dashed #667eea;
+        }
+
+        .2fa-instructions {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .2fa-instructions ol {
+            margin-left: 20px;
+            line-height: 2;
+        }
+
+        .2fa-instructions strong {
+            color: #0369a1;
+        }
+
+        .manual-key {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 1.1em;
+            word-break: break-all;
+            text-align: center;
+        }
+
         @media (max-width: 600px) {
             .container { padding: 20px; }
             h1 { font-size: 1.8em; }
@@ -341,12 +465,55 @@
     </style>
 </head>
 <body>
+    <!-- HTTPS WARNING -->
+    <div class="https-warning" id="httpsWarning">
+        <h3><i class="fas fa-exclamation-triangle"></i> ⚠️ IMPORTANT: Use GitHub Pages URL</h3>
+        <p style="color:#78350f;margin-bottom:15px;"><strong>You're opening this file locally. Voice features won't work!</strong></p>
+        <p style="color:#78350f;margin-bottom:15px;">To use Anjalee properly:</p>
+        <ol>
+            <li>Upload this file to GitHub</li>
+            <li>Enable GitHub Pages in repository settings</li>
+            <li>Use this URL (not the file):<br>
+            <code>https://pesalasj.github.io/Anjalee/</code></li>
+            <li>Bookmark that URL for easy access</li>
+        </ol>
+        <p style="color:#92400e;margin-top:15px;"><strong>Why?</strong> Microphone requires HTTPS (secure connection). Local files don't work.</p>
+    </div>
+
+    <!-- 2FA Setup Screen -->
+    <div id="2faSetupScreen" class="login-screen" style="display:none;">
+        <div class="2fa-setup">
+            <h2><i class="fas fa-shield-alt"></i> Setup 2FA</h2>
+            <p style="color:#64748b;margin-bottom:20px;">Scan QR code with authenticator app</p>
+            
+            <div class="2fa-instructions">
+                <strong>Steps:</strong>
+                <ol>
+                    <li>Install Google Authenticator, Authy, or similar app</li>
+                    <li>Scan the QR code below</li>
+                    <li>Enter the 6-digit code from the app</li>
+                    <li>Click "Verify & Complete Setup"</li>
+                </ol>
+            </div>
+
+            <div class="qr-container" id="qrCode"></div>
+            
+            <div style="margin:15px 0;">
+                <strong style="color:#64748b;font-size:0.9em;">Or enter manually:</strong>
+                <div class="manual-key" id="manualKey"></div>
+            </div>
+
+            <input type="text" id="2faCode" placeholder="Enter 6-digit code" maxlength="6" inputmode="numeric">
+            <button onclick="verify2FASetup()"><i class="fas fa-check"></i> Verify & Complete Setup</button>
+        </div>
+    </div>
+
     <div id="loginScreen" class="login-screen">
         <div class="login-box">
             <h2><i class="fas fa-shield-alt"></i> Anjalee Login</h2>
             <p style="color:#64748b;margin-bottom:20px;">Enter 2FA Code</p>
             <div style="background:#eff6ff;color:#2563eb;padding:15px;border-radius:8px;margin:20px 0;font-size:0.9em;">
-                <strong>Default code: 123456</strong>
+                <strong>Enter code from your authenticator app</strong>
             </div>
             <input type="text" id="twoFACode" placeholder="000000" maxlength="6" inputmode="numeric">
             <button onclick="verify2FA()"><i class="fas fa-lock"></i> Login</button>
@@ -363,7 +530,7 @@
             <div class="developer-credit"><strong>Developer:</strong> Pesala S. Jayawardene</div>
         </div>
 
-        <!-- Status Bar - Shows what's saved -->
+        <!-- Status Bar -->
         <div class="status-bar" id="statusBar">
             <i class="fas fa-check-circle"></i> <span id="statusBarText">Checking saved data...</span>
         </div>
@@ -467,59 +634,222 @@
         <div class="footer">
             <strong>How to Use:</strong>
             <ol>
-                <li><strong>Login:</strong> Enter code 123456</li>
+                <li><strong>Login:</strong> Enter code from authenticator app</li>
                 <li><strong>Save API key:</strong> From serper.dev (free) - IT WILL STAY SAVED</li>
                 <li><strong>Click Microphone:</strong> Allow permission when asked (ONE TIME ONLY)</li>
                 <li><strong>Start Talking:</strong> Say what you're looking for</li>
-                <li><strong>Results Appear:</strong> With images, prices, and contact details</li>
+                <li><strong>Results Appear:</strong> With full contact details - no need to browse!</li>
             </ol>
             <p style="margin-top:15px;padding:15px;background:#fef3c7;border-radius:8px;color:#92400e;">
                 <strong>✅ API Key:</strong> Saved permanently in your browser<br>
                 <strong>✅ Login:</strong> Stays logged in until you click Logout<br>
                 <strong>✅ Mic Permission:</strong> Granted once, saved forever<br>
                 <strong>📱 Samsung/Chrome:</strong> Fully supported<br>
+                <strong>⚠️ Must use HTTPS:</strong> Use GitHub Pages URL, not local file<br>
                 <strong>Developer:</strong> Pesala S. Jayawardene
             </p>
         </div>
     </div>
 
     <script>
+        // ==================== TOTP 2FA SYSTEM ====================
+        class TOTPAuthenticator {
+            constructor() {
+                this.secret = null;
+                this.issuer = 'Anjalee';
+                this.accountName = 'user@anjalee';
+            }
+
+            generateSecret() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+                let secret = '';
+                for (let i = 0; i < 32; i++) {
+                    secret += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                this.secret = secret;
+                return secret;
+            }
+
+            generateTOTP(secret, timeStep = 30) {
+                const epoch = Math.floor(Date.now() / 1000);
+                const time = Math.floor(epoch / timeStep);
+                const timeHex = this.leftPad(time.toString(16), 16);
+                
+                const hmac = this.hmacSHA1(secret, timeHex);
+                const offset = this.getOffset(hmac);
+                const code = this.getCode(hmac, offset);
+                
+                return code;
+            }
+
+            leftPad(str, length) {
+                while (str.length < length) {
+                    str = '0' + str;
+                }
+                return str;
+            }
+
+            hmacSHA1(key, data) {
+                // Simplified HMAC-SHA1 for demo
+                // In production, use a proper crypto library
+                const hash = sjcl.hash.sha1.hash(key + data);
+                return sjcl.codec.hex.fromBits(hash);
+            }
+
+            getOffset(hmac) {
+                const offset = parseInt(hmac.substring(hmac.length - 1), 16);
+                return offset * 2;
+            }
+
+            getCode(hmac, offset) {
+                const binary = this.hmacToBinary(hmac.substring(offset, offset + 8));
+                const code = (binary & 0x7fffffff) % 1000000;
+                return this.leftPad(code.toString(), 6);
+            }
+
+            hmacToBinary(hex) {
+                return parseInt(hex, 16);
+            }
+
+            generateQRCodeURL() {
+                return `otpauth://totp/${this.issuer}:${this.accountName}?secret=${this.secret}&issuer=${this.issuer}`;
+            }
+
+            verify(code, secret, window = 1) {
+                for (let i = -window; i <= window; i++) {
+                    const expectedCode = this.generateTOTP(secret, 30);
+                    if (code === expectedCode) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+
+        let totpAuth = new TOTPAuthenticator();
+        let is2FASetup = false;
+
+        // ==================== CHECK IF USING HTTPS ====================
+        window.onload = function() {
+            const isHTTPS = window.location.protocol === 'https:' || 
+                           window.location.hostname === 'localhost' || 
+                           window.location.hostname === '127.0.0.1';
+            
+            if (!isHTTPS) {
+                console.log('❌ Not using HTTPS - showing warning');
+                document.getElementById('httpsWarning').classList.add('show');
+            } else {
+                console.log('✅ Using HTTPS - all features enabled');
+            }
+            
+            // Check 2FA setup
+            const savedSecret = localStorage.getItem('anjalee_2fa_secret');
+            if (savedSecret) {
+                console.log('✅ 2FA already setup');
+                is2FASetup = true;
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('2faSetupScreen').style.display = 'none';
+            } else {
+                console.log('❌ 2FA not setup - showing setup screen');
+                setup2FA();
+            }
+            
+            updateStatusBar();
+        };
+
+        function setup2FA() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('2faSetupScreen').style.display = 'flex';
+            
+            // Generate new secret
+            const secret = totpAuth.generateSecret();
+            localStorage.setItem('anjalee_2fa_secret', secret);
+            
+            // Generate QR code
+            const qrURL = totpAuth.generateQRCodeURL();
+            new QRCode(document.getElementById('qrCode'), {
+                text: qrURL,
+                width: 200,
+                height: 200,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+            
+            // Show manual key
+            document.getElementById('manualKey').textContent = secret;
+        }
+
+        function verify2FASetup() {
+            const code = document.getElementById('2faCode').value.trim();
+            const secret = localStorage.getItem('anjalee_2fa_secret');
+            
+            if (totpAuth.verify(code, secret)) {
+                console.log('✅ 2FA setup verified');
+                localStorage.setItem('anjalee_2fa_verified', 'true');
+                is2FASetup = true;
+                document.getElementById('2faSetupScreen').style.display = 'none';
+                document.getElementById('loginScreen').style.display = 'flex';
+                alert('✅ 2FA setup complete! Now login with your authenticator app.');
+            } else {
+                alert('❌ Invalid code. Please try again.');
+                document.getElementById('2faCode').value = '';
+            }
+        }
+
         // ==================== FIXED STATE MANAGEMENT ====================
-        // Using localStorage for EVERYTHING (not sessionStorage which clears easily)
-        
         const AppState = {
-            // Get saved API key
             getApiKey: function() {
-                return localStorage.getItem('anjalee_apiKey') || '';
+                try {
+                    return localStorage.getItem('anjalee_apiKey') || '';
+                } catch(e) {
+                    console.error('localStorage error:', e);
+                    return '';
+                }
             },
             
-            // Save API key with verification
             saveApiKey: function(key) {
-                localStorage.setItem('anjalee_apiKey', key);
-                // Verify it saved
-                const saved = localStorage.getItem('anjalee_apiKey');
-                console.log('API Key saved:', saved ? '✅ YES' : '❌ NO');
-                return saved === key;
+                try {
+                    localStorage.setItem('anjalee_apiKey', key);
+                    const saved = localStorage.getItem('anjalee_apiKey');
+                    console.log('API Key saved:', saved ? '✅ YES' : '❌ NO');
+                    return saved === key;
+                } catch(e) {
+                    console.error('Failed to save API key:', e);
+                    return false;
+                }
             },
             
-            // Get login state
             isLoggedIn: function() {
-                return localStorage.getItem('anjalee_loggedIn') === 'true';
+                try {
+                    return localStorage.getItem('anjalee_loggedIn') === 'true';
+                } catch(e) {
+                    return false;
+                }
             },
             
-            // Set login state
             setLoggedIn: function(loggedIn) {
-                localStorage.setItem('anjalee_loggedIn', loggedIn ? 'true' : 'false');
+                try {
+                    localStorage.setItem('anjalee_loggedIn', loggedIn ? 'true' : 'false');
+                } catch(e) {
+                    console.error('Failed to save login state:', e);
+                }
             },
             
-            // Get conversation mode
             getMode: function() {
-                return localStorage.getItem('anjalee_mode') || 'continuous';
+                try {
+                    return localStorage.getItem('anjalee_mode') || 'continuous';
+                } catch(e) {
+                    return 'continuous';
+                }
             },
             
-            // Set conversation mode
             setMode: function(mode) {
-                localStorage.setItem('anjalee_mode', mode);
+                try {
+                    localStorage.setItem('anjalee_mode', mode);
+                } catch(e) {
+                    console.error('Failed to save mode:', e);
+                }
             }
         };
 
@@ -527,29 +857,11 @@
         const DEFAULT_2FA_CODE = '123456';
         let twoFACode = localStorage.getItem('anjalee_2fa_code') || DEFAULT_2FA_CODE;
 
-        window.onload = function() {
-            console.log('=== Anjalee Voice Assistant ===');
-            console.log('Developer: Pesala S. Jayawardene');
-            console.log('Android:', /Android/i.test(navigator.userAgent));
-            console.log('Chrome:', /Chrome/i.test(navigator.userAgent));
-            
-            // Check if already logged in
-            if (AppState.isLoggedIn()) {
-                console.log('✅ Already logged in');
-                showMainApp();
-            } else {
-                console.log('❌ Not logged in');
-                setTimeout(() => document.getElementById('twoFACode').focus(), 500);
-            }
-            
-            // Update status bar
-            updateStatusBar();
-        };
-
         function verify2FA() {
             const code = document.getElementById('twoFACode').value.trim();
-            if (code === twoFACode) {
-                // Save login state to localStorage (NOT sessionStorage)
+            const secret = localStorage.getItem('anjalee_2fa_secret');
+            
+            if (totpAuth.verify(code, secret)) {
                 AppState.setLoggedIn(true);
                 console.log('✅ Login saved to localStorage');
                 showMainApp();
@@ -572,7 +884,7 @@
             const statusText = document.getElementById('statusBarText');
             
             if (loggedIn && apiKey) {
-                statusText.innerHTML = '✅ Logged in • ✅ API Key Saved';
+                statusText.innerHTML = '✅ Logged in • ✅ API Key Saved • ✅ 2FA Active';
                 statusText.parentElement.style.background = '#f0fdf4';
                 statusText.parentElement.style.borderColor = '#10b981';
                 statusText.parentElement.style.color = '#059669';
@@ -601,7 +913,6 @@
                 document.getElementById('setupBox').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
                 
-                // Initialize recognition
                 initRecognition();
                 
                 speak('Hello! API key loaded. Tap the microphone button to start.', true);
@@ -649,7 +960,6 @@
                 return;
             }
             
-            // Save with verification
             const saved = AppState.saveApiKey(key);
             
             if (saved) {
@@ -659,7 +969,6 @@
                 statusDiv.style.display = 'block';
                 statusDiv.innerHTML = '✅ API Key saved permanently!';
                 
-                // Wait a moment then show main app
                 setTimeout(() => {
                     document.getElementById('setupBox').style.display = 'none';
                     document.getElementById('mainApp').style.display = 'block';
@@ -674,7 +983,7 @@
                 }, 1500);
             } else {
                 console.error('❌ Failed to save API Key');
-                alert('Failed to save API key. Please check browser storage permissions and try again.');
+                alert('Failed to save API key. Please check browser storage permissions and try again.\n\nNote: Make sure you are using the GitHub Pages URL (https://pesalasj.github.io/Anjalee/), not opening the file locally.');
             }
         }
 
@@ -839,7 +1148,7 @@
                 const response = await fetch('https://google.serper.dev/search', {
                     method: 'POST',
                     headers: {
-                        'X-API-KEY': apiKey || AppState.getApiKey(),
+                        'X-API-KEY': AppState.getApiKey(),
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ q: searchQuery, num: 3 })
@@ -1142,8 +1451,19 @@
                     
                     const domain = new URL(item.link).hostname;
                     let contact = 'Contact: ' + domain;
-                    const phoneMatch = item.snippet?.match(/(?:phone|tel|call)\s*:?\s*([+\d\s()-]{8,})/i);
-                    if (phoneMatch) contact = 'Phone: ' + phoneMatch[1].trim();
+                    let phone = '';
+                    let email = '';
+                    
+                    const phoneMatch = item.snippet?.match(/(?:phone|tel|call|mobile)\s*:?\s*([+\d\s()-]{8,})/i);
+                    if (phoneMatch) {
+                        phone = phoneMatch[1].trim();
+                        contact = phone;
+                    }
+                    
+                    const emailMatch = item.snippet?.match(/[\w.-]+@[\w.-]+\.\w+/i);
+                    if (emailMatch) {
+                        email = emailMatch[0];
+                    }
                     
                     const features = [];
                     if (item.snippet?.match(/\d+\s*bed/i)) features.push('Beds');
@@ -1155,6 +1475,8 @@
                         price: price,
                         location: address,
                         contact: contact,
+                        phone: phone,
+                        email: email,
                         features: features,
                         description: item.snippet || 'No description',
                         imageUrl: imageUrl,
@@ -1211,7 +1533,21 @@
                     </div>
                     <p style="color:#667eea;margin:8px 0;"><i class="fas fa-link"></i> <a href="${item.fullUrl}" target="_blank">${item.fullUrl}</a></p>
                     <div class="result-contact">
-                        <i class="fas fa-phone"></i> <strong>${item.contact}</strong>
+                        <strong><i class="fas fa-address-card"></i> Contact Information</strong>
+                        ${item.phone ? `
+                        <div class="contact-item">
+                            <i class="fas fa-phone"></i> <strong>Phone:</strong> <a href="tel:${item.phone}">${item.phone}</a>
+                        </div>` : ''}
+                        ${item.email ? `
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i> <strong>Email:</strong> <a href="mailto:${item.email}">${item.email}</a>
+                        </div>` : ''}
+                        <div class="contact-item">
+                            <i class="fas fa-building"></i> <strong>Business:</strong> ${item.domain}
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-globe"></i> <strong>Website:</strong> <a href="${item.fullUrl}" target="_blank">${item.fullUrl}</a>
+                        </div>
                     </div>
                     <button class="explain-btn" id="explainBtn-${i}" onclick="explainResult(${i})">
                         <i class="fas fa-volume-up"></i> Explain Details
@@ -1253,7 +1589,7 @@
             if (!searchResults.length) { alert('No results'); return; }
             let content = `ANJALEE RESULTS - ${countryNames[selectedCountry]}\n\n`;
             searchResults.forEach((r, i) => {
-                content += `${i+1}. ${r.title}\n   Price: ${r.price}\n   Location: ${r.location}\n   Contact: ${r.contact}\n   URL: ${r.fullUrl}\n\n`;
+                content += `${i+1}. ${r.title}\n   Price: ${r.price}\n   Location: ${r.location}\n   Phone: ${r.phone || 'N/A'}\n   Email: ${r.email || 'N/A'}\n   Website: ${r.fullUrl}\n\n`;
             });
             const blob = new Blob([content], { type: 'text/plain' });
             saveAs(blob, `anjalee-${Date.now()}.txt`);

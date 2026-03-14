@@ -12,14 +12,10 @@
     <style>
         :root {
             --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #ec4899;
             --success: #10b981;
-            --warning: #f59e0b;
             --danger: #ef4444;
-            --dark: #1e293b;
+            --warning: #f59e0b;
             --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --shadow-lg: 0 20px 60px rgba(0,0,0,0.3);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -37,8 +33,7 @@
             max-width: 100%;
             margin: 0 auto;
             padding: 30px;
-            box-shadow: var(--shadow-lg);
-            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
 
         .login-screen {
@@ -61,7 +56,7 @@
             text-align: center;
         }
 
-        .login-box h2 { color: var(--dark); margin-bottom: 10px; font-size: 2em; }
+        .login-box h2 { color: #1e293b; margin-bottom: 10px; font-size: 2em; }
         .login-box input {
             width: 100%; padding: 16px; border: 2px solid #d1d5db;
             border-radius: 12px; font-size: 18px; margin: 15px 0; text-align: center;
@@ -88,7 +83,6 @@
             background: linear-gradient(135deg, #fef3c7, #fde68a);
             border: 2px solid #f59e0b; border-radius: 16px;
             padding: 25px; margin-bottom: 25px; text-align: center;
-            display: block !important;
         }
 
         .setup-box h3 { color: #92400e; margin-bottom: 15px; font-size: 1.3em; }
@@ -101,6 +95,30 @@
             padding: 18px 35px; border-radius: 12px; font-size: 16px;
             font-weight: 600; cursor: pointer; margin-top: 10px; width: 100%;
         }
+
+        /* DIAGNOSTICS BOX */
+        .diagnostics-box {
+            background: #1e293b;
+            color: #10b981;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            font-size: 0.85em;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .diagnostics-box h4 {
+            color: #fbbf24;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .diagnostics-box .ok { color: #10b981; }
+        .diagnostics-box .error { color: #ef4444; }
+        .diagnostics-box .warning { color: #f59e0b; }
 
         .status {
             background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
@@ -116,6 +134,7 @@
         .status.speaking { background: #ecfdf5; color: #059669; }
         .status.searching { background: #eff6ff; color: #2563eb; }
         .status.ready { background: #f0fdf4; color: #059669; border: 2px solid #10b981; }
+        .status.error { background: #fef2f2; color: #dc2626; border: 2px solid #ef4444; }
 
         @keyframes pulse {
             0%, 100% { opacity: 1; }
@@ -133,6 +152,12 @@
         .mic-btn.listening {
             background: linear-gradient(135deg, #ef4444, #dc2626);
             animation: pulse 1.5s infinite;
+        }
+
+        .mic-btn.disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            box-shadow: none;
         }
 
         .mode-selector {
@@ -228,7 +253,7 @@
             object-fit: contain;
         }
 
-        .result-title { font-weight: 700; color: var(--dark); margin-bottom: 12px; font-size: 1.2em; }
+        .result-title { font-weight: 700; color: #1e293b; margin-bottom: 12px; font-size: 1.2em; }
         .result-price { color: #10b981; font-weight: 700; font-size: 1.4em; margin: 10px 0; }
         .result-location { color: #64748b; margin: 8px 0; font-weight: 500; }
 
@@ -299,10 +324,6 @@
             font-weight: 600; flex: 1; min-width: 140px;
         }
 
-        .save-btn.word { background: #2b579a; }
-        .save-btn.pdf { background: #dc3545; }
-        .save-btn.text { background: #6c757d; }
-
         .language-selector {
             background: linear-gradient(135deg, #dbeafe, #bfdbfe);
             border: 2px solid #3b82f6;
@@ -330,6 +351,38 @@
             background: linear-gradient(135deg, #ef4444, #dc2626);
             color: white; border: none; padding: 10px 20px;
             border-radius: 8px; cursor: pointer; font-weight: 600;
+        }
+
+        /* MANUAL INPUT FALLBACK */
+        .manual-input {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .manual-input.show { display: block; }
+
+        .manual-input input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #0ea5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+
+        .manual-input button {
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
         }
 
         @media (max-width: 600px) {
@@ -367,6 +420,12 @@
             <div class="developer-credit"><strong>Developer:</strong> Pesala S. Jayawardene</div>
         </div>
 
+        <!-- DIAGNOSTICS BOX - Shows what's working and what's not -->
+        <div class="diagnostics-box" id="diagnosticsBox">
+            <h4><i class="fas fa-stethoscope"></i> System Diagnostics</h4>
+            <div id="diagnosticsContent">Running checks...</div>
+        </div>
+
         <div class="setup-box" id="setupBox">
             <h3>🔑 Step 1: Get API Key</h3>
             <p><strong>⚠️ 403 Error?</strong> Wait 2-3 minutes after signing up at serper.dev</p>
@@ -392,7 +451,7 @@
             <div class="language-selector">
                 <strong>🌍 Select Language:</strong>
                 <select id="languageSelect" onchange="changeLanguage()">
-                    <option value="en-US">🇺🇸 English (US) - Best Female Voice</option>
+                    <option value="en-US">🇺🇸 English (US) - Best Support</option>
                     <option value="en-GB">🇬🇧 English (UK)</option>
                     <option value="si-LK">🇱🇰 Sinhala</option>
                     <option value="ta-LK">🇱🇰 Tamil (SL)</option>
@@ -404,18 +463,18 @@
                 <h3>💬 Conversation Mode</h3>
                 <div class="mode-toggle">
                     <button class="mode-btn active" id="continuousMode" onclick="setMode('continuous')">
-                        <i class="fas fa-comments"></i> Continuous Discussion
+                        <i class="fas fa-comments"></i> Continuous
                     </button>
                     <button class="mode-btn" id="saveMode" onclick="setMode('save')">
-                        <i class="fas fa-save"></i> Save After Each Search
+                        <i class="fas fa-save"></i> Save Mode
                     </button>
                 </div>
                 <div class="mode-info" id="modeInfo">
-                    <strong>✅ Continuous Mode:</strong> Mic stays ON, no wake word needed, just keep talking.
+                    <strong>✅ Continuous Mode:</strong> Just keep talking.
                 </div>
             </div>
 
-            <div class="status" id="status">🎤 Tap microphone button to start</div>
+            <div class="status" id="status">🔍 Running diagnostics...</div>
 
             <div class="settings">
                 <div>
@@ -436,6 +495,14 @@
             <button class="mic-btn" id="micBtn" onclick="toggleMic()">
                 <i class="fas fa-microphone"></i>
             </button>
+
+            <!-- MANUAL INPUT FALLBACK - Shows if voice doesn't work -->
+            <div class="manual-input" id="manualInput">
+                <h4 style="color:#0369a1;margin-bottom:10px;"><i class="fas fa-keyboard"></i> Voice Not Working? Type Instead!</h4>
+                <p style="color:#64748b;font-size:0.9em;margin-bottom:15px;">If microphone isn't working on your device, you can type your search query:</p>
+                <input type="text" id="manualQuery" placeholder="Type what you're looking for...">
+                <button onclick="submitManualQuery()"><i class="fas fa-search"></i> Search</button>
+            </div>
 
             <div class="message user" id="userMsg">
                 <div class="message-label">👤 You Said</div>
@@ -470,19 +537,135 @@
             <ol>
                 <li><strong>Login:</strong> Enter code 123456</li>
                 <li><strong>Save API key:</strong> From serper.dev (free)</li>
-                <li><strong>Click Microphone:</strong> Browser will ask for permission → Click "Allow"</li>
-                <li><strong>Start Talking:</strong> Say what you're looking for</li>
+                <li><strong>Check Diagnostics:</strong> See if your device supports voice</li>
+                <li><strong>Click Microphone:</strong> Allow permission when asked</li>
+                <li><strong>Or Type:</strong> Use manual input if voice doesn't work</li>
+                <li><strong>Start Talking/Typing:</strong> Say or type what you're looking for</li>
                 <li><strong>Results Appear:</strong> With images, prices, and contact details</li>
             </ol>
             <p style="margin-top:15px;padding:15px;background:#fef3c7;border-radius:8px;color:#92400e;">
-                <strong>🎤 First Time:</strong> Browser will ask for microphone permission - Click "Allow"<br>
-                <strong>📱 Mobile:</strong> If permission doesn't appear, tap address bar → Settings → Permissions → Microphone → Allow<br>
+                <strong>📱 Mobile Issues?</strong> Check the diagnostics box above for specific solutions.<br>
+                <strong>⚠️ iOS Safari:</strong> Voice recognition has limited support. Try Chrome on iOS or use manual input.<br>
+                <strong>🔒 HTTPS Required:</strong> Voice only works on secure (https://) connections.<br>
                 <strong>Developer:</strong> Pesala S. Jayawardene
             </p>
         </div>
     </div>
 
     <script>
+        // ==================== DIAGNOSTICS SYSTEM ====================
+        let diagnostics = {
+            https: false,
+            speechRecognition: false,
+            speechSynthesis: false,
+            microphone: false,
+            browser: '',
+            os: '',
+            errors: []
+        };
+
+        function runDiagnostics() {
+            const content = document.getElementById('diagnosticsContent');
+            let html = '';
+
+            // Check HTTPS
+            diagnostics.https = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            html += `<div class="${diagnostics.https ? 'ok' : 'error'}">`;
+            html += `<i class="fas ${diagnostics.https ? 'fa-check-circle' : 'fa-times-circle'}"></i> `;
+            html += `HTTPS: ${diagnostics.https ? '✅ Working' : '❌ Required for voice'}`;
+            if (!diagnostics.https) {
+                html += `<br><small>⚠️ Voice requires HTTPS. Upload to GitHub Pages for free HTTPS.</small>`;
+                diagnostics.errors.push('Not using HTTPS');
+            }
+            html += `</div>`;
+
+            // Check Browser
+            const userAgent = navigator.userAgent;
+            if (userAgent.includes('Chrome')) {
+                diagnostics.browser = 'Chrome';
+                html += `<div class="ok"><i class="fas fa-check-circle"></i> Browser: ✅ Chrome (Best support)</div>`;
+            } else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
+                diagnostics.browser = 'Safari';
+                html += `<div class="warning"><i class="fas fa-exclamation-triangle"></i> Browser: ⚠️ Safari (Limited voice support)</div>`;
+                diagnostics.errors.push('Safari has limited speech recognition');
+            } else if (userAgent.includes('Firefox')) {
+                diagnostics.browser = 'Firefox';
+                html += `<div class="warning"><i class="fas fa-exclamation-triangle"></i> Browser: ⚠️ Firefox (May not support speech)</div>`;
+                diagnostics.errors.push('Firefox may not support speech recognition');
+            } else {
+                diagnostics.browser = 'Other';
+                html += `<div class="warning"><i class="fas fa-question-circle"></i> Browser: ❓ Unknown (Use Chrome for best results)</div>`;
+            }
+
+            // Check OS
+            if (userAgent.includes('Android')) {
+                diagnostics.os = 'Android';
+                html += `<div class="ok"><i class="fas fa-mobile-alt"></i> OS: ✅ Android</div>`;
+            } else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
+                diagnostics.os = 'iOS';
+                html += `<div class="warning"><i class="fas fa-mobile-alt"></i> OS: ⚠️ iOS (Limited support)</div>`;
+                diagnostics.errors.push('iOS has limited speech recognition support');
+            } else if (userAgent.includes('Windows')) {
+                diagnostics.os = 'Windows';
+                html += `<div class="ok"><i class="fas fa-desktop"></i> OS: ✅ Windows</div>`;
+            } else if (userAgent.includes('Mac')) {
+                diagnostics.os = 'macOS';
+                html += `<div class="ok"><i class="fas fa-desktop"></i> OS: ✅ macOS</div>`;
+            }
+
+            // Check SpeechRecognition
+            diagnostics.speechRecognition = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+            html += `<div class="${diagnostics.speechRecognition ? 'ok' : 'error'}">`;
+            html += `<i class="fas ${diagnostics.speechRecognition ? 'fa-check-circle' : 'fa-times-circle'}"></i> `;
+            html += `Speech Recognition: ${diagnostics.speechRecognition ? '✅ Supported' : '❌ Not supported'}`;
+            if (!diagnostics.speechRecognition) {
+                html += `<br><small>⚠️ Your browser doesn't support speech recognition. Use Chrome.</small>`;
+                diagnostics.errors.push('Speech Recognition not available');
+            }
+            html += `</div>`;
+
+            // Check SpeechSynthesis
+            diagnostics.speechSynthesis = !!window.speechSynthesis;
+            html += `<div class="${diagnostics.speechSynthesis ? 'ok' : 'error'}">`;
+            html += `<i class="fas ${diagnostics.speechSynthesis ? 'fa-check-circle' : 'fa-times-circle'}"></i> `;
+            html += `Speech Synthesis: ${diagnostics.speechSynthesis ? '✅ Supported' : '❌ Not supported'}`;
+            if (!diagnostics.speechSynthesis) {
+                diagnostics.errors.push('Speech Synthesis not available');
+            }
+            html += `</div>`;
+
+            // Check Microphone API
+            diagnostics.microphone = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+            html += `<div class="${diagnostics.microphone ? 'ok' : 'error'}">`;
+            html += `<i class="fas ${diagnostics.microphone ? 'fa-check-circle' : 'fa-times-circle'}"></i> `;
+            html += `Microphone API: ${diagnostics.microphone ? '✅ Available' : '❌ Not available'}`;
+            if (!diagnostics.microphone) {
+                diagnostics.errors.push('Microphone API not available');
+            }
+            html += `</div>`;
+
+            // Summary
+            html += `<div style="margin-top:15px;padding-top:15px;border-top:1px solid #334155;">`;
+            const allGood = diagnostics.https && diagnostics.speechRecognition && diagnostics.speechSynthesis && diagnostics.microphone;
+            if (allGood) {
+                html += `<div class="ok"><strong>✅ All systems ready! Voice should work.</strong></div>`;
+            } else {
+                html += `<div class="error"><strong>⚠️ ${diagnostics.errors.length} issue(s) found. See above for solutions.</strong></div>`;
+                html += `<div style="margin-top:10px;"><small>💡 Tip: Use Chrome on Android or Desktop for best results. iOS Safari has limited support.</small></div>`;
+                html += `<div style="margin-top:10px;"><small>💡 Manual input is available below the microphone button if voice doesn't work.</small></div>`;
+            }
+            html += `</div>`;
+
+            content.innerHTML = html;
+
+            // Show manual input if voice won't work
+            if (!allGood) {
+                document.getElementById('manualInput').classList.add('show');
+            }
+
+            return allGood;
+        }
+
         // ==================== 2FA SYSTEM ====================
         const DEFAULT_2FA_CODE = '123456';
         let twoFACode = localStorage.getItem('anjalee_2fa_code') || DEFAULT_2FA_CODE;
@@ -492,11 +675,13 @@
             console.log('=== Anjalee Voice Assistant ===');
             console.log('Developer: Pesala S. Jayawardene');
             
+            // Run diagnostics first
+            runDiagnostics();
+            
             if (isLoggedIn) {
                 showMainApp();
             }
             setTimeout(() => document.getElementById('twoFACode').focus(), 500);
-            loadVoices();
         };
 
         function verify2FA() {
@@ -528,11 +713,15 @@
                 document.getElementById('setupBox').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
                 
-                // Initialize recognition WITHOUT checking getUserMedia first
                 initRecognition();
                 
-                speak('Hello! API key loaded. Tap the microphone button to start.', true);
-                updateStatus('🎤 Tap microphone to start');
+                if (diagnostics.speechRecognition) {
+                    speak('Hello! API key loaded. Tap the microphone button to start.', true);
+                    updateStatus('🎤 Tap microphone to start');
+                } else {
+                    updateStatus('⌨️ Voice not supported. Use manual input below.');
+                    document.getElementById('manualInput').classList.add('show');
+                }
             }
             loadVoices();
         }
@@ -556,7 +745,7 @@
             
             const info = document.getElementById('modeInfo');
             if (mode === 'continuous') {
-                info.innerHTML = '<strong>✅ Continuous Mode:</strong> Mic stays ON, no wake word needed, just keep talking.';
+                info.innerHTML = '<strong>✅ Continuous Mode:</strong> Just keep talking.';
             } else {
                 info.innerHTML = '<strong>💾 Save Mode:</strong> Say "Anjalee" before each search.';
             }
@@ -630,8 +819,29 @@
             setMode(savedMode);
             
             initRecognition();
-            speak('API key saved! Tap microphone to start.', true);
-            updateStatus('✅ API key saved! Tap microphone');
+            
+            if (diagnostics.speechRecognition) {
+                speak('API key saved! Tap microphone to start.', true);
+                updateStatus('✅ API key saved! Tap microphone');
+            } else {
+                updateStatus('✅ API key saved! Use manual input below.');
+                document.getElementById('manualInput').classList.add('show');
+            }
+        }
+
+        // ==================== MANUAL INPUT FALLBACK ====================
+        function submitManualQuery() {
+            const query = document.getElementById('manualQuery').value.trim();
+            if (!query) {
+                alert('Please enter a search query');
+                return;
+            }
+            
+            document.getElementById('userText').textContent = query;
+            document.getElementById('userMsg').classList.add('show');
+            document.getElementById('manualQuery').value = '';
+            
+            doSearch(query);
         }
 
         // ==================== VOICE SYSTEM ====================
@@ -713,12 +923,6 @@
             const explanation = `Here are the details for ${item.title}. The price is ${item.price}. Location is ${item.location}. Contact: ${item.contact}. Features: ${item.features.join(', ')}.`;
             
             speak(explanation, true);
-            
-            setTimeout(() => {
-                if (isExplaining && !isListening) {
-                    try { recognition.start(); } catch(e) {}
-                }
-            }, 3000);
         }
 
         function stopExplaining() {
@@ -823,7 +1027,7 @@
             }
         }
 
-        // ==================== MIC SYSTEM - FIXED! ====================
+        // ==================== MIC SYSTEM ====================
         let recognition = null;
         let isListening = false;
         let isSpeaking = false;
@@ -847,12 +1051,14 @@
             'lk': 'LK', 'in': 'IN', 'us': 'US', 'gb': 'GB'
         };
 
-        // KEY FIX: Initialize recognition WITHOUT getUserMedia check
         function initRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             
             if (!SpeechRecognition) {
-                alert('Please use Chrome browser for voice support');
+                console.log('❌ SpeechRecognition not supported');
+                updateStatus('⌨️ Voice not supported. Use manual input below.');
+                document.getElementById('micBtn').classList.add('disabled');
+                document.getElementById('manualInput').classList.add('show');
                 return;
             }
             
@@ -875,13 +1081,11 @@
                 isListening = false;
                 document.getElementById('micBtn').classList.remove('listening');
                 
-                // Auto-restart in continuous mode
                 if (conversationMode === 'continuous' && !isExplaining && !processLock && !isSpeaking) {
                     setTimeout(() => {
                         if (!isListening && !isSpeaking && conversationMode === 'continuous' && !isExplaining) {
                             try {
                                 recognition.start();
-                                console.log('✅ Mic auto-restarted');
                             } catch (e) {
                                 console.log('Auto-restart failed:', e.message);
                             }
@@ -896,7 +1100,6 @@
                 
                 console.log('🎤 Heard:', text);
                 
-                // Stop commands during explanation
                 if (isExplaining) {
                     const lowerText = text.toLowerCase();
                     if (lowerText.includes('anjalee') || lowerText.includes('stop')) {
@@ -905,7 +1108,6 @@
                     }
                 }
                 
-                // Handle questions during explanation
                 if (isExplaining && currentExplainingItem) {
                     if (text.length > 5 && !text.toLowerCase().includes('anjalee') && !text.toLowerCase().includes('stop')) {
                         searchAdditionalInfo(currentExplainingItem, text);
@@ -913,7 +1115,6 @@
                     return;
                 }
                 
-                // Prevent duplicates
                 if (text === lastProcessedText && (currentTime - lastProcessedTime) < 5000) {
                     return;
                 }
@@ -929,7 +1130,6 @@
                 
                 const lower = text.toLowerCase();
                 
-                // Stop commands
                 if (lower.includes('stop') || lower.includes('goodbye') || lower.includes('bye')) {
                     speak('Goodbye!', true);
                     updateStatus('👋 Ended');
@@ -938,7 +1138,6 @@
                     return;
                 }
                 
-                // Continuous mode - search without wake word
                 if (conversationMode === 'continuous') {
                     if (text.length > 5) {
                         if (isListening) recognition.stop();
@@ -948,7 +1147,6 @@
                     }
                 }
                 
-                // Save mode - wake word required
                 const wakeWords = ['anjalee', 'anjali', 'angel', 'anjale'];
                 let wakeWordFound = false;
                 let command = '';
@@ -999,21 +1197,15 @@
                 isProcessing = false;
                 
                 if (event.error === 'not-allowed') {
-                    updateStatus('❌ Mic blocked - Allow in browser settings');
-                    // Show helpful message ONCE
-                    if (!sessionStorage.getItem('micHelpShown')) {
-                        sessionStorage.setItem('micHelpShown', 'true');
-                        setTimeout(() => {
-                            alert('🎤 Microphone Permission\n\nTo allow microphone:\n\n1. Tap the 🔒 lock icon in address bar\n2. Tap "Permissions" or "Site settings"\n3. Find "Microphone" → Select "Allow"\n4. Refresh the page\n5. Tap the microphone button again');
-                        }, 1000);
-                    }
+                    updateStatus('❌ Mic permission denied');
+                    document.getElementById('manualInput').classList.add('show');
                 } else if (event.error === 'no-speech') {
-                    // Just restart, no error shown
                     setTimeout(() => {
                         try { recognition.start(); } catch(e) {}
                     }, 2000);
                 } else {
                     updateStatus('Error: ' + event.error);
+                    document.getElementById('manualInput').classList.add('show');
                 }
             };
 
@@ -1038,10 +1230,8 @@
                     recognition.start();
                 } catch (e) {
                     console.error('Mic start error:', e);
-                    // If it fails, show help
-                    setTimeout(() => {
-                        alert('🎤 Microphone Issue\n\nPlease allow microphone permission:\n\n1. Tap the 🔒 lock icon in address bar\n2. Tap "Permissions"\n3. Select "Microphone" → "Allow"\n4. Refresh and try again');
-                    }, 500);
+                    updateStatus('❌ Mic error. Use manual input below.');
+                    document.getElementById('manualInput').classList.add('show');
                 }
             }
         }
@@ -1054,6 +1244,7 @@
             else if (text.includes('Speaking')) bar.classList.add('speaking');
             else if (text.includes('Searching')) bar.classList.add('searching');
             else if (text.includes('ready') || text.includes('Ready') || text.includes('Tap')) bar.classList.add('ready');
+            else if (text.includes('Error') || text.includes('❌')) bar.classList.add('error');
         }
 
         async function doSearch(query) {
@@ -1158,9 +1349,7 @@
                     updateStatus('✅ Done! Keep talking!');
                     setTimeout(() => {
                         if (!isListening && conversationMode === 'continuous' && !isExplaining) {
-                            try {
-                                recognition.start();
-                            } catch(e) {}
+                            try { recognition.start(); } catch(e) {}
                         }
                     }, 2000);
                 } else {

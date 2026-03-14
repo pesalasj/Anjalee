@@ -503,10 +503,11 @@ document.getElementById('apiKey').value = apiKey;
 document.getElementById('setupBox').style.display = 'none';
 document.getElementById('mainApp').style.display = 'block';
 initRecognition();
-speak('Hello! API key loaded. Tap microphone to start.', true);
+speak('Hello! Welcome to Anjalee. API key loaded. Tap microphone to start.', true);
 } else {
 document.getElementById('setupBox').style.display = 'block';
 document.getElementById('mainApp').style.display = 'none';
+speak('Hello! Welcome to Anjalee. Please save your API key first.', true);
 }
 updateStatusBar();
 loadVoices();
@@ -561,6 +562,7 @@ let currentExplainingItem = null;
 let waitingForPhoneNumber = false;
 let phoneNumberAttemptCount = 0;
 let searchResults = [];
+let currentResultIndex = 0;
 
 function loadVoices() {
 allVoices = window.speechSynthesis.getVoices();
@@ -607,6 +609,7 @@ if (!searchResults[index]) return;
 const item = searchResults[index];
 currentExplainingItem = item;
 isExplaining = true;
+currentResultIndex = index;
 const btn = document.getElementById(`explainBtn-${index}`);
 if (btn) {
 btn.classList.add('explaining');
@@ -640,7 +643,7 @@ let cleanNumber = phoneNumber.replace(/\D/g, '');
 console.log('Original number:', phoneNumber);
 console.log('Cleaned number:', cleanNumber);
 
-// Handle country code
+// Handle country code - Sri Lankan format
 if (cleanNumber.startsWith('0')) {
 cleanNumber = '94' + cleanNumber.substring(1);
 } else if (cleanNumber.length === 10 && !cleanNumber.startsWith('94')) {
@@ -670,7 +673,7 @@ message += `Location: ${item.location}\n`;
 message += `URL: ${item.fullUrl}\n\n`;
 });
 
-// Create WhatsApp URL - FIXED FORMAT
+// Create WhatsApp URL
 const whatsappURL = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
 console.log('WhatsApp URL:', whatsappURL);
 
@@ -681,16 +684,14 @@ if (newWindow) {
 speak(`Opening WhatsApp to send to ${phoneNumber}. Please complete the send in WhatsApp.`, true);
 updateStatus('✅ WhatsApp opened!');
 } else {
-// Fallback if popup blocked
 window.location.href = whatsappURL;
 speak(`WhatsApp opened. Please complete the send.`, true);
 }
 
-// Reset flags IMMEDIATELY
+// Reset flags
 waitingForPhoneNumber = false;
 phoneNumberAttemptCount = 0;
 
-// Restart recognition after delay
 setTimeout(() => {
 if (conversationMode === 'continuous' && recognition) {
 try {
@@ -710,7 +711,6 @@ phoneNumberAttemptCount = 0;
 speak('Please say your WhatsApp number with country code. For example: 94771234567');
 updateStatus('📱 Say your WhatsApp number');
 
-// Stop current recognition and restart fresh
 if (recognition) {
 recognition.stop();
 setTimeout(() => {
@@ -783,7 +783,7 @@ const currentTime = Date.now();
 
 console.log('🎤 Heard:', text);
 
-// Handle phone number - FIXED TO ONLY PROCESS ONCE
+// Handle phone number - FIXED
 if (waitingForPhoneNumber) {
 console.log('📱 Processing phone number. Attempt:', phoneNumberAttemptCount + 1);
 
@@ -795,9 +795,8 @@ console.log('Digits extracted:', digitsOnly, 'Length:', digitsOnly.length);
 if (digitsOnly.length >= 10 && digitsOnly.length <= 15) {
 console.log('✅ Valid number captured:', digitsOnly);
 sendToWhatsApp(digitsOnly);
-return; // EXIT IMMEDIATELY
+return;
 } else if (digitsOnly.length >= 5) {
-// Got some digits but not enough
 phoneNumberAttemptCount++;
 if (phoneNumberAttemptCount >= 3) {
 speak('Let me try a different approach. Please tap the WhatsApp button on the result instead.');
@@ -808,7 +807,6 @@ return;
 speak(`I heard ${digitsOnly.length} digits. Please say the complete number with country code, like 94771234567`);
 return;
 } else {
-// No valid digits
 phoneNumberAttemptCount++;
 if (phoneNumberAttemptCount >= 3) {
 speak('Please tap the green WhatsApp button on the search result instead.');
@@ -839,6 +837,21 @@ const lower = text.toLowerCase();
 // WhatsApp command
 if (lower.includes('whatsapp') || lower.includes('send to whatsapp')) {
 promptWhatsApp();
+isProcessing = false;
+return;
+}
+
+// More details / next result command
+if (lower.includes('more details') || lower.includes('next result') || lower.includes('show next') || lower.includes('next one')) {
+if (searchResults.length > 0 && currentResultIndex < searchResults.length - 1) {
+currentResultIndex++;
+const nextItem = searchResults[currentResultIndex];
+speak(`Result ${currentResultIndex + 1}: ${nextItem.title}. Price: ${nextItem.price}. Location: ${nextItem.location}.`, true);
+// Open the link in new tab
+window.open(nextItem.fullUrl, '_blank');
+} else {
+speak('No more results available.', true);
+}
 isProcessing = false;
 return;
 }
@@ -941,6 +954,7 @@ const count = parseInt(document.getElementById('resultCount').value) || 5;
 
 searchCount++;
 currentSearchQuery = query;
+currentResultIndex = 0; // Reset result index
 document.getElementById('searchQuery').textContent = query + ' in ' + countryNames[country];
 document.getElementById('loading').classList.add('show');
 document.getElementById('results').style.display = 'none';
@@ -1077,6 +1091,7 @@ waitingForYes = false;
 isProcessing = false;
 isExplaining = false;
 currentExplainingItem = null;
+currentResultIndex = 0;
 waitingForPhoneNumber = false;
 phoneNumberAttemptCount = 0;
 updateStatus('🎤 Ready');

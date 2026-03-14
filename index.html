@@ -888,18 +888,39 @@ isProcessing = false;
 return;
 }
 
-// NEW: Open link command
-if (lower.includes('open link') || lower.includes('open result')) {
-// Extract number from command
+// NEW: Open link command - IMPROVED
+if (lower.includes('open link') || lower.includes('open result') || lower.includes('show link') || lower.includes('show result')) {
+console.log('🔗 Open link command detected');
+
+// Extract number from command - more flexible pattern
 const numberMatch = text.match(/(\d+)/);
+console.log('Number match:', numberMatch);
+
 if (numberMatch && searchResults.length > 0) {
 const linkNumber = parseInt(numberMatch[1]) - 1; // Convert to 0-based index
+console.log('Link number (0-based):', linkNumber);
 
 if (linkNumber >= 0 && linkNumber < searchResults.length) {
 const item = searchResults[linkNumber];
+console.log('Opening:', item.fullUrl);
+
 speak(`Opening link ${linkNumber + 1}: ${item.title}`, true);
-window.open(item.fullUrl, '_blank');
+
+// Try to open the link
+try {
+const newWindow = window.open(item.fullUrl, '_blank');
+if (newWindow) {
 updateStatus(`✅ Opened link ${linkNumber + 1}`);
+console.log('✅ Link opened successfully');
+} else {
+// Popup blocked - show message and try alternative
+speak(`Popup blocker may be preventing the link from opening. Please click the link manually in the results below.`, true);
+updateStatus('⚠️ Popup blocked - click link manually');
+}
+} catch (e) {
+console.error('Error opening link:', e);
+speak('Sorry, I could not open the link. Please click it manually in the results.', true);
+}
 } else {
 speak(`Link ${linkNumber + 1} not found. I have ${searchResults.length} results. Please say a number between 1 and ${searchResults.length}.`, true);
 }
@@ -1106,7 +1127,7 @@ country: countryNames[country]
 
 showResults();
 
-const msg = `I found ${searchResults.length} results for ${query} in ${countryNames[country]}. You can say "open link 1", "open link 2", and so on to view details.`;
+const msg = `I found ${searchResults.length} results for ${query} in ${countryNames[country]}. You can say "open link 1", "open link 2", and so on to view the websites.`;
 document.getElementById('assistText').textContent = msg;
 document.getElementById('assistMsg').classList.add('show');
 

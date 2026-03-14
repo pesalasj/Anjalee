@@ -51,6 +51,7 @@ width: 100%;
 text-align: center;
 }
 .login-box h2 { color: #1e293b; margin-bottom: 10px; font-size: 2em; }
+.login-box p { color: #64748b; margin-bottom: 20px; }
 .login-box input {
 width: 100%; padding: 16px; border: 2px solid #d1d5db;
 border-radius: 12px; font-size: 18px; margin: 15px 0; text-align: center;
@@ -115,6 +116,7 @@ animation: pulse 1.5s infinite;
 .status.speaking { background: #ecfdf5; color: #059669; }
 .status.searching { background: #eff6ff; color: #2563eb; }
 .status.ready { background: #f0fdf4; color: #059669; border: 2px solid #10b981; }
+.status.whatsapp { background: #dcfce7; color: #166534; border: 2px solid #22c55e; }
 @keyframes pulse {
 0%, 100% { opacity: 1; }
 50% { opacity: 0.7; }
@@ -481,6 +483,7 @@ What is your favorite color?
 <strong>✅ Mic Permission:</strong> Granted once, saved forever<br>
 <strong>📱 Samsung/Chrome:</strong> Fully supported<br>
 <strong>🔐 Security:</strong> Password protected with recovery option<br>
+<strong>📱 WhatsApp:</strong> Send results by voice command<br>
 <strong>Developer:</strong> Pesala S. Jayawardene
 </p>
 </div>
@@ -489,7 +492,7 @@ What is your favorite color?
 <script>
 // ==================== SECURITY SETTINGS ====================
 const DEFAULT_PASSWORD = 'Colombo1$';
-const DEFAULT_SECURITY_ANSWER = 'blue'; // Answer to "What is your favorite color?"
+const DEFAULT_SECURITY_ANSWER = 'blue';
 
 // ==================== FIXED STATE MANAGEMENT ====================
 const AppState = {
@@ -576,7 +579,7 @@ AppState.setLoggedIn(true);
 console.log('✅ Login successful');
 showMainApp();
 } else {
-alert('❌ Invalid password. Please try again.');
+alert('❌ Invalid password. Try: Colombo1$');
 document.getElementById('loginPassword').value = '';
 }
 }
@@ -589,7 +592,7 @@ if (answer === savedAnswer) {
 console.log('✅ Security answer verified');
 showResetPassword();
 } else {
-alert('❌ Incorrect answer. Please try again.');
+alert('❌ Incorrect answer. Default is "blue"');
 document.getElementById('securityAnswer').value = '';
 }
 }
@@ -727,6 +730,7 @@ let allVoices = [];
 let isExplaining = false;
 let currentExplainingItem = null;
 let waitingForPhoneNumber = false;
+let searchResults = [];
 
 function loadVoices() {
 allVoices = window.speechSynthesis.getVoices();
@@ -882,7 +886,7 @@ const searchQuery = `${item.title} ${question} ${item.location}`;
 const response = await fetch('https://google.serper.dev/search', {
 method: 'POST',
 headers: {
-'X-API-KEY': apiKey || AppState.getApiKey(),
+'X-API-KEY': AppState.getApiKey(),
 'Content-Type': 'application/json'
 },
 body: JSON.stringify({ q: searchQuery, num: 3 })
@@ -903,6 +907,73 @@ speak('Sorry, could not search right now.', true);
 }
 }
 
+// ==================== WHATSAPP INTEGRATION ====================
+function sendToWhatsApp(phoneNumber) {
+if (searchResults.length === 0) {
+speak('No search results to send.');
+return;
+}
+
+// Format phone number (remove leading 0 if present, ensure country code)
+let formattedNumber = phoneNumber.replace(/\D/g, '');
+if (formattedNumber.startsWith('0')) {
+formattedNumber = '94' + formattedNumber.substring(1); // Sri Lanka country code
+}
+
+// Create message with search results
+let message = `*Anjalee Search Results*\n\n`;
+message += `*Query:* ${currentSearchQuery}\n`;
+message += `*Country:* ${countryNames[selectedCountry]}\n`;
+message += `*Results:* ${searchResults.length}\n\n`;
+
+searchResults.forEach((item, i) => {
+message += `*${i+1}. ${item.title}*\n`;
+message += `Price: ${item.price}\n`;
+message += `Location: ${item.location}\n`;
+message += `Contact: ${item.contact}\n`;
+message += `URL: ${item.fullUrl}\n\n`;
+});
+
+// Encode message for URL
+const encodedMessage = encodeURIComponent(message);
+const whatsappURL = `https://wa.me/${formattedNumber}?text=${encodedMessage}`;
+
+// Open WhatsApp
+window.open(whatsappURL, '_blank');
+
+speak(`Results sent to WhatsApp number ${phoneNumber}.`, true);
+updateStatus('✅ Sent to WhatsApp');
+
+// Reset after sending
+setTimeout(() => {
+waitingForPhoneNumber = false;
+if (conversationMode === 'continuous') {
+recognition.start();
+}
+}, 3000);
+}
+
+function promptWhatsApp() {
+if (searchResults.length === 0) {
+speak('No search results to send. Please search first.');
+return;
+}
+waitingForPhoneNumber = true;
+speak('Please say your mobile number including country code. For example: 9 4 7 7 1 2 3 4 5 6 7. Say each digit clearly.');
+updateStatus('📱 Say your mobile number');
+
+// Restart recognition if not listening
+setTimeout(() => {
+if (!isListening && recognition) {
+try {
+recognition.start();
+} catch(e) {
+console.log('Mic restart error:', e);
+}
+}
+}, 1000);
+}
+
 // ==================== MIC SYSTEM ====================
 let recognition = null;
 let isListening = false;
@@ -910,7 +981,6 @@ let isSpeaking = false;
 let apiKey = '';
 let pendingQuery = '';
 let waitingForYes = false;
-let searchResults = [];
 let searchCount = 0;
 let currentSearchQuery = '';
 let lastProcessedText = '';
@@ -954,9 +1024,9 @@ console.log('❌ Recognition ended');
 isListening = false;
 document.getElementById('micBtn').classList.remove('listening');
 
-if (conversationMode === 'continuous' && !isExplaining && !processLock && !isSpeaking) {
+if (conversationMode === 'continuous' && !isExplaining && !processLock && !isSpeaking && !waitingForPhoneNumber) {
 setTimeout(() => {
-if (!isListening && !isSpeaking && conversationMode === 'continuous' && !isExplaining) {
+if (!isListening && !isSpeaking && conversationMode === 'continuous' && !isExplaining && !waitingForPhoneNumber) {
 try {
 recognition.start();
 console.log('✅ Mic auto-restarted');
@@ -974,18 +1044,58 @@ const currentTime = Date.now();
 
 console.log('🎤 Heard:', text);
 
-// Handle phone number input for WhatsApp
+// Handle phone number input for WhatsApp - IMPROVED
 if (waitingForPhoneNumber) {
-const phoneMatch = text.match(/[\d\s-]{10,}/);
+console.log('📱 Waiting for phone number. Heard:', text);
+
+// Remove common words and extract numbers
+const cleanedText = text.toLowerCase()
+.replace(/oh/g, '0')  // Convert "oh" to zero
+.replace(/zero/g, '0')
+.replace(/one/g, '1')
+.replace(/two/g, '2')
+.replace(/three/g, '3')
+.replace(/four/g, '4')
+.replace(/five/g, '5')
+.replace(/six/g, '6')
+.replace(/seven/g, '7')
+.replace(/eight/g, '8')
+.replace(/nine/g, '9');
+
+console.log('Cleaned text:', cleanedText);
+
+// Try to find phone number pattern (10+ digits with optional spaces/dashes)
+const phoneMatch = cleanedText.match(/[\d\s-]{10,}/);
+
 if (phoneMatch) {
-const phoneNumber = phoneMatch[0].replace(/\D/g, '');
+const phoneNumber = phoneMatch[0].replace(/\D/g, ''); // Remove all non-digits
+
+// Validate: should be 10-15 digits
+if (phoneNumber.length >= 10 && phoneNumber.length <= 15) {
 console.log('📱 Phone number captured:', phoneNumber);
 sendToWhatsApp(phoneNumber);
 waitingForPhoneNumber = false;
-} else {
-speak('I did not hear a valid phone number. Please say your mobile number including country code. For example: 94771234567');
-}
 return;
+} else {
+speak(`I heard ${phoneNumber.length} digits. Please say a valid mobile number with 10 to 15 digits. For example: 9 4 7 7 1 2 3 4 5 6 7`);
+return;
+}
+} else {
+// Check if there are any digits at all
+const digitsOnly = cleanedText.match(/\d+/g);
+if (digitsOnly && digitsOnly.join('').length >= 5) {
+const phoneNumber = digitsOnly.join('');
+if (phoneNumber.length >= 10 && phoneNumber.length <= 15) {
+console.log('📱 Phone number captured from digits:', phoneNumber);
+sendToWhatsApp(phoneNumber);
+waitingForPhoneNumber = false;
+return;
+}
+}
+
+speak('I did not hear a valid phone number. Please say your mobile number slowly, digit by digit. For example: nine four seven seven one two three four five six seven');
+return;
+}
 }
 
 if (isExplaining) {
@@ -1020,17 +1130,9 @@ const lower = text.toLowerCase();
 
 // Check for WhatsApp command
 if (lower.includes('whatsapp') || lower.includes('send to whatsapp') || lower.includes('send whatsapp')) {
-if (searchResults.length > 0) {
-waitingForPhoneNumber = true;
-speak('Please say your mobile number including country code. For example: 94771234567');
-updateStatus('📱 Say your mobile number');
+promptWhatsApp();
 isProcessing = false;
 return;
-} else {
-speak('No search results to send. Please search first.');
-isProcessing = false;
-return;
-}
 }
 
 if (lower.includes('stop') || lower.includes('goodbye') || lower.includes('bye')) {
@@ -1144,51 +1246,7 @@ if (text.includes('Listening')) bar.classList.add('listening');
 else if (text.includes('Speaking')) bar.classList.add('speaking');
 else if (text.includes('Searching')) bar.classList.add('searching');
 else if (text.includes('ready') || text.includes('Ready') || text.includes('Tap')) bar.classList.add('ready');
-}
-
-// ==================== WHATSAPP INTEGRATION ====================
-function sendToWhatsApp(phoneNumber) {
-if (searchResults.length === 0) {
-speak('No search results to send.');
-return;
-}
-
-// Format phone number (remove leading 0 if present, ensure country code)
-let formattedNumber = phoneNumber.replace(/\D/g, '');
-if (formattedNumber.startsWith('0')) {
-formattedNumber = '94' + formattedNumber.substring(1); // Sri Lanka country code
-}
-
-// Create message with search results
-let message = `*Anjalee Search Results*\n\n`;
-message += `*Query:* ${currentSearchQuery}\n`;
-message += `*Country:* ${countryNames[selectedCountry]}\n`;
-message += `*Results:* ${searchResults.length}\n\n`;
-
-searchResults.forEach((item, i) => {
-message += `*${i+1}. ${item.title}*\n`;
-message += `Price: ${item.price}\n`;
-message += `Location: ${item.location}\n`;
-message += `Contact: ${item.contact}\n`;
-message += `URL: ${item.fullUrl}\n\n`;
-});
-
-// Encode message for URL
-const encodedMessage = encodeURIComponent(message);
-const whatsappURL = `https://wa.me/${formattedNumber}?text=${encodedMessage}`;
-
-// Open WhatsApp
-window.open(whatsappURL, '_blank');
-
-speak(`Results sent to WhatsApp number ${phoneNumber}.`, true);
-updateStatus('✅ Sent to WhatsApp');
-
-// Reset after sending
-setTimeout(() => {
-if (conversationMode === 'continuous') {
-recognition.start();
-}
-}, 3000);
+else if (text.includes('WhatsApp')) bar.classList.add('whatsapp');
 }
 
 async function doSearch(query) {
@@ -1341,12 +1399,6 @@ ${item.features.map(f => `<span style="background:#dbeafe;color:#1e40af;padding:
 document.getElementById('results').style.display = 'block';
 }
 
-function promptWhatsApp() {
-waitingForPhoneNumber = true;
-speak('Please say your mobile number including country code. For example: 94771234567');
-updateStatus('📱 Say your mobile number');
-}
-
 function clearResults() {
 document.getElementById('results').style.display = 'none';
 document.getElementById('userMsg').classList.remove('show');
@@ -1357,6 +1409,7 @@ waitingForYes = false;
 isProcessing = false;
 isExplaining = false;
 currentExplainingItem = null;
+waitingForPhoneNumber = false;
 updateStatus('🎤 Ready - Keep talking!');
 setTimeout(() => {
 if (!isListening && conversationMode === 'continuous') {

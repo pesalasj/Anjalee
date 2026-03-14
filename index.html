@@ -328,7 +328,6 @@ h1 { font-size: 1.8em; }
 <p style="font-size:1em;opacity:0.95;">Professional Voice Assistant</p>
 <div class="developer-credit"><strong>Developer:</strong> Pesala S. Jayawardene</div>
 </div>
-<!-- Status Bar - Shows what's saved -->
 <div class="status-bar" id="statusBar">
 <i class="fas fa-check-circle"></i> <span id="statusBarText">Checking saved data...</span>
 </div>
@@ -422,33 +421,29 @@ h1 { font-size: 1.8em; }
 <strong>How to Use:</strong>
 <ol>
 <li><strong>Login:</strong> Enter code 123456</li>
-<li><strong>Save API key:</strong> From serper.dev (free) - IT WILL STAY SAVED</li>
-<li><strong>Click Microphone:</strong> Allow permission when asked (ONE TIME ONLY)</li>
+<li><strong>Save API key:</strong> From serper.dev (free)</li>
+<li><strong>Click Microphone:</strong> Allow permission</li>
 <li><strong>Start Talking:</strong> Say what you're looking for</li>
 <li><strong>Results Appear:</strong> With images, prices, and contact details</li>
-<li><strong>WhatsApp:</strong> Say "send to WhatsApp" and speak your mobile number</li>
+<li><strong>WhatsApp:</strong> Say "send to WhatsApp" and speak your mobile number once</li>
 </ol>
 <p style="margin-top:15px;padding:15px;background:#fef3c7;border-radius:8px;color:#92400e;">
-<strong>✅ API Key:</strong> Saved permanently in your browser<br>
-<strong>✅ Login:</strong> Stays logged in until you click Logout<br>
-<strong>✅ Mic Permission:</strong> Granted once, saved forever<br>
-<strong>📱 Samsung/Chrome:</strong> Fully supported<br>
-<strong>📱 WhatsApp:</strong> Send results by voice command<br>
+<strong>✅ API Key:</strong> Saved permanently<br>
+<strong>✅ Login:</strong> Stays logged in<br>
+<strong>📱 WhatsApp:</strong> Send results by voice<br>
 <strong>Developer:</strong> Pesala S. Jayawardene
 </p>
 </div>
 </div>
 <script>
-// ==================== FIXED STATE MANAGEMENT ====================
+// ==================== STATE MANAGEMENT ====================
 const AppState = {
 getApiKey: function() {
 return localStorage.getItem('anjalee_apiKey') || '';
 },
 saveApiKey: function(key) {
 localStorage.setItem('anjalee_apiKey', key);
-const saved = localStorage.getItem('anjalee_apiKey');
-console.log('API Key saved:', saved ? '✅ YES' : '❌ NO');
-return saved === key;
+return localStorage.getItem('anjalee_apiKey') === key;
 },
 isLoggedIn: function() {
 return localStorage.getItem('anjalee_loggedIn') === 'true';
@@ -466,38 +461,22 @@ localStorage.setItem('anjalee_mode', mode);
 
 // ==================== 2FA SYSTEM ====================
 const DEFAULT_2FA_CODE = '123456';
-let twoFACode = localStorage.getItem('anjalee_2fa_code') || DEFAULT_2FA_CODE;
-
 window.onload = function() {
-console.log('=== Anjalee Voice Assistant ===');
-console.log('Developer: Pesala S. Jayawardene');
-
 if (AppState.isLoggedIn()) {
-console.log('✅ Already logged in');
 showMainApp();
 } else {
-console.log('❌ Not logged in');
 setTimeout(() => document.getElementById('twoFACode').focus(), 500);
 }
-
 updateStatusBar();
 };
 
 function verify2FA() {
 const code = document.getElementById('twoFACode').value.trim();
-if (code === twoFACode) {
+if (code === DEFAULT_2FA_CODE) {
 AppState.setLoggedIn(true);
-console.log('✅ Login saved to localStorage');
 showMainApp();
 } else {
-const err = document.getElementById('loginError');
-if (!err) {
-const e = document.createElement('div');
-e.className = 'error-msg';
-e.style.cssText = 'background:#fef2f2;color:#dc2626;padding:12px;border-radius:8px;margin:15px 0;';
-e.textContent = 'Invalid code';
-document.querySelector('.login-box').insertBefore(e, document.querySelector('button'));
-}
+alert('❌ Invalid code. Try: 123456');
 document.getElementById('twoFACode').value = '';
 }
 }
@@ -506,51 +485,35 @@ function updateStatusBar() {
 const apiKey = AppState.getApiKey();
 const loggedIn = AppState.isLoggedIn();
 const statusText = document.getElementById('statusBarText');
-
 if (loggedIn && apiKey) {
 statusText.innerHTML = '✅ Logged in • ✅ API Key Saved';
-statusText.parentElement.style.background = '#f0fdf4';
-statusText.parentElement.style.borderColor = '#10b981';
-statusText.parentElement.style.color = '#059669';
 } else if (loggedIn) {
 statusText.innerHTML = '✅ Logged in • ⚠️ API Key Needed';
-statusText.parentElement.style.background = '#fffbeb';
-statusText.parentElement.style.borderColor = '#f59e0b';
-statusText.parentElement.style.color = '#d97706';
 } else {
 statusText.innerHTML = '⚠️ Not Logged In';
-statusText.parentElement.style.background = '#fef2f2';
-statusText.parentElement.style.borderColor = '#ef4444';
-statusText.parentElement.style.color = '#dc2626';
 }
 }
 
 function showMainApp() {
 document.getElementById('loginScreen').style.display = 'none';
 document.getElementById('mainContainer').style.display = 'block';
-
 const apiKey = AppState.getApiKey();
-console.log('API Key from storage:', apiKey ? apiKey.substring(0, 10) + '...' : 'NONE');
-
 if (apiKey && apiKey.length >= 10) {
 document.getElementById('apiKey').value = apiKey;
 document.getElementById('setupBox').style.display = 'none';
 document.getElementById('mainApp').style.display = 'block';
 initRecognition();
-speak('Hello! API key loaded. Tap the microphone button to start.', true);
-updateStatus('🎤 Tap microphone to start');
+speak('Hello! API key loaded. Tap microphone to start.', true);
 } else {
 document.getElementById('setupBox').style.display = 'block';
 document.getElementById('mainApp').style.display = 'none';
-updateStatus('⌨️ Save API key first');
 }
-
 updateStatusBar();
 loadVoices();
 }
 
 function logout() {
-if (confirm('Logout? You will need to login again next time.')) {
+if (confirm('Logout?')) {
 AppState.setLoggedIn(false);
 location.reload();
 }
@@ -558,54 +521,34 @@ location.reload();
 
 // ==================== MODE SYSTEM ====================
 let conversationMode = 'continuous';
-
 function setMode(mode) {
 conversationMode = mode;
 AppState.setMode(mode);
-
 document.getElementById('continuousMode').classList.toggle('active', mode === 'continuous');
 document.getElementById('saveMode').classList.toggle('active', mode === 'save');
-
-const info = document.getElementById('modeInfo');
-if (mode === 'continuous') {
-info.innerHTML = '<strong>✅ Continuous Mode:</strong> Just keep talking.';
-} else {
-info.innerHTML = '<strong>💾 Save Mode:</strong> Say "Anjalee" before each search.';
-}
+document.getElementById('modeInfo').innerHTML = mode === 'continuous' ?
+'<strong>✅ Continuous Mode:</strong> Just keep talking.' :
+'<strong>💾 Save Mode:</strong> Say "Anjalee" before search.';
 }
 
 // ==================== API KEY ====================
 function saveApiKey() {
 const key = document.getElementById('apiKey').value.trim();
 if (!key || key.length < 10) {
-alert('Please enter valid API key from serper.dev (at least 10 characters)');
+alert('Please enter valid API key (at least 10 characters)');
 return;
 }
-
-const saved = AppState.saveApiKey(key);
-
-if (saved) {
-console.log('✅ API Key saved successfully');
-const statusDiv = document.getElementById('apiStatus');
-statusDiv.className = 'status ready';
-statusDiv.style.display = 'block';
-statusDiv.innerHTML = '✅ API Key saved permanently!';
-
+if (AppState.saveApiKey(key)) {
+document.getElementById('apiStatus').className = 'status ready';
+document.getElementById('apiStatus').style.display = 'block';
+document.getElementById('apiStatus').innerHTML = '✅ API Key saved!';
 setTimeout(() => {
 document.getElementById('setupBox').style.display = 'none';
 document.getElementById('mainApp').style.display = 'block';
-
-conversationMode = AppState.getMode();
-setMode(conversationMode);
-
 initRecognition();
 speak('API key saved! Tap microphone to start.', true);
-updateStatus('✅ API key saved! Tap microphone');
 updateStatusBar();
 }, 1500);
-} else {
-console.error('❌ Failed to save API Key');
-alert('Failed to save API key. Please check browser storage permissions and try again.');
 }
 }
 
@@ -616,17 +559,16 @@ let allVoices = [];
 let isExplaining = false;
 let currentExplainingItem = null;
 let waitingForPhoneNumber = false;
+let phoneNumberAttemptCount = 0;
 let searchResults = [];
 
 function loadVoices() {
 allVoices = window.speechSynthesis.getVoices();
 selectBestVoice(currentLanguage);
 }
-
 if (window.speechSynthesis) {
 window.speechSynthesis.onvoiceschanged = loadVoices;
 setTimeout(loadVoices, 500);
-setTimeout(loadVoices, 1000);
 }
 
 function selectBestVoice(lang) {
@@ -634,8 +576,7 @@ currentVoice = allVoices.find(v =>
 v.lang.startsWith('en') && (
 v.name.toLowerCase().includes('female') ||
 v.name.toLowerCase().includes('zira') ||
-v.name.toLowerCase().includes('samantha') ||
-v.name.toLowerCase().includes('google')
+v.name.toLowerCase().includes('samantha')
 )
 ) || allVoices.find(v => v.lang.startsWith('en')) || allVoices[0];
 }
@@ -649,211 +590,114 @@ selectBestVoice(currentLanguage);
 function speak(text, useFemaleVoice = true) {
 if (!window.speechSynthesis) return;
 window.speechSynthesis.cancel();
-
 setTimeout(() => {
 const utterance = new SpeechSynthesisUtterance(text);
 if (currentVoice) utterance.voice = currentVoice;
 utterance.lang = currentLanguage;
 utterance.rate = 0.9;
 utterance.pitch = 1.1;
-
-utterance.onstart = () => {
-isSpeaking = true;
-updateStatus('🔊 Speaking...');
-};
-
-utterance.onend = () => {
-isSpeaking = false;
-if (isListening && conversationMode === 'continuous' && !isExplaining) {
-updateStatus('🎤 Listening...');
-}
-};
-
+utterance.onstart = () => { isSpeaking = true; };
+utterance.onend = () => { isSpeaking = false; };
 window.speechSynthesis.speak(utterance);
 }, 100);
 }
 
-// Explain result details
 function explainResult(index) {
 if (!searchResults[index]) return;
-
 const item = searchResults[index];
 currentExplainingItem = item;
 isExplaining = true;
-
 const btn = document.getElementById(`explainBtn-${index}`);
 if (btn) {
 btn.classList.add('explaining');
 btn.innerHTML = '<i class="fas fa-volume-up"></i> Explaining...';
 }
-
-const explanation = `Here are the details for ${item.title}. The price is ${item.price}. Location is ${item.location}. Contact: ${item.contact}. Features: ${item.features.join(', ')}.`;
-
-speak(explanation, true);
+speak(`Here are the details for ${item.title}. Price: ${item.price}. Location: ${item.location}.`, true);
 }
 
 function stopExplaining() {
 if (!isExplaining) return;
-
 isExplaining = false;
 currentExplainingItem = null;
 window.speechSynthesis.cancel();
-
 document.querySelectorAll('.explain-btn').forEach(btn => {
 btn.classList.remove('explaining');
 btn.innerHTML = '<i class="fas fa-volume-up"></i> Explain Details';
 });
-
-updateStatus('✅ Stopped. Keep talking!');
 }
 
-// Search for additional information
-async function searchAdditionalInfo(item, question) {
-updateStatus('🔍 Answering: ' + question);
-
-const lowerQuestion = question.toLowerCase();
-const answer = answerFromResults(lowerQuestion, searchResults);
-
-if (answer) {
-speak(answer, true);
-return;
-}
-
-await searchFromInternet(item, question);
-}
-
-function answerFromResults(question, results) {
-if (!results || results.length === 0) return null;
-
-if (question.includes('cheapest') || question.includes('lowest')) {
-return findCheapest(results);
-}
-
-if (question.includes('how many') || question.includes('total')) {
-return `There are ${results.length} results.`;
-}
-
-return null;
-}
-
-function findCheapest(results) {
-const priced = results.filter(r => {
-const priceMatch = r.price?.match(/[\d,]+/);
-return priceMatch && !r.price.toLowerCase().includes('request');
-});
-
-if (priced.length === 0) return 'Could not determine prices.';
-
-let cheapest = priced[0];
-let lowestPrice = extractPriceNumber(cheapest.price);
-
-for (let i = 1; i < priced.length; i++) {
-const priceNum = extractPriceNumber(priced[i].price);
-if (priceNum < lowestPrice) {
-lowestPrice = priceNum;
-cheapest = priced[i];
-}
-}
-
-return `The lowest cost is ${cheapest.title} at ${cheapest.price}.`;
-}
-
-function extractPriceNumber(priceText) {
-if (!priceText) return Infinity;
-const match = priceText.match(/[\d,]+/);
-if (!match) return Infinity;
-return parseInt(match[0].replace(/,/g, ''), 10) || Infinity;
-}
-
-async function searchFromInternet(item, question) {
-try {
-const searchQuery = `${item.title} ${question} ${item.location}`;
-
-const response = await fetch('https://google.serper.dev/search', {
-method: 'POST',
-headers: {
-'X-API-KEY': apiKey || AppState.getApiKey(),
-'Content-Type': 'application/json'
-},
-body: JSON.stringify({ q: searchQuery, num: 3 })
-});
-
-if (!response.ok) throw new Error('API error');
-
-const data = await response.json();
-
-if (data.organic && data.organic.length > 0) {
-const snippet = data.organic[0].snippet;
-speak(`I found: ${snippet.substring(0, 200)}.`, true);
-} else {
-speak('Could not find that information.', true);
-}
-} catch (error) {
-speak('Sorry, could not search right now.', true);
-}
-}
-
-// ==================== WHATSAPP INTEGRATION ====================
+// ==================== WHATSAPP - FIXED ====================
 function sendToWhatsApp(phoneNumber) {
 if (searchResults.length === 0) {
 speak('No search results to send.');
 waitingForPhoneNumber = false;
+phoneNumberAttemptCount = 0;
 return;
 }
 
-// Clean and format phone number
+// Clean phone number - remove ALL non-digits
 let cleanNumber = phoneNumber.replace(/\D/g, '');
+console.log('Original number:', phoneNumber);
+console.log('Cleaned number:', cleanNumber);
 
-// Handle different country code formats
+// Handle country code
 if (cleanNumber.startsWith('0')) {
 cleanNumber = '94' + cleanNumber.substring(1);
 } else if (cleanNumber.length === 10 && !cleanNumber.startsWith('94')) {
 cleanNumber = '94' + cleanNumber;
 }
 
-// Validate phone number length
-if (cleanNumber.length < 10 || cleanNumber.length > 15) {
-speak(`The number ${phoneNumber} doesn't seem valid. Please try again with country code, like 94771234567`);
+// Validate length (11-13 digits with country code)
+if (cleanNumber.length < 11 || cleanNumber.length > 15) {
+speak(`Number seems invalid. I heard ${cleanNumber.length} digits. Please try again with country code like 94771234567`);
 waitingForPhoneNumber = false;
+phoneNumberAttemptCount = 0;
 setTimeout(() => {
 if (conversationMode === 'continuous') recognition.start();
 }, 2000);
 return;
 }
 
-// Create message with search results
+// Create message
 let message = `*Anjalee Search Results*\n\n`;
 message += `*Query:* ${currentSearchQuery}\n`;
-message += `*Country:* ${countryNames[selectedCountry]}\n`;
 message += `*Results:* ${searchResults.length}\n\n`;
 
 searchResults.forEach((item, i) => {
 message += `*${i+1}. ${item.title}*\n`;
 message += `Price: ${item.price}\n`;
 message += `Location: ${item.location}\n`;
-message += `Contact: ${item.contact}\n`;
 message += `URL: ${item.fullUrl}\n\n`;
 });
 
-// Create WhatsApp URL
-const whatsappURL = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
+// Create WhatsApp URL - FIXED FORMAT
+const whatsappURL = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
+console.log('WhatsApp URL:', whatsappURL);
 
-console.log('Opening WhatsApp URL:', whatsappURL);
-console.log('Phone number:', cleanNumber);
+// Open WhatsApp
+const newWindow = window.open(whatsappURL, '_blank');
 
-// Open WhatsApp in new window
-window.open(whatsappURL, '_blank');
-
-speak(`Sending results to ${phoneNumber} via WhatsApp.`, true);
-updateStatus('✅ Opening WhatsApp...');
-
-// Reset after sending
-setTimeout(() => {
-waitingForPhoneNumber = false;
-if (conversationMode === 'continuous') {
-recognition.start();
+if (newWindow) {
+speak(`Opening WhatsApp to send to ${phoneNumber}. Please complete the send in WhatsApp.`, true);
+updateStatus('✅ WhatsApp opened!');
+} else {
+// Fallback if popup blocked
+window.location.href = whatsappURL;
+speak(`WhatsApp opened. Please complete the send.`, true);
 }
-}, 3000);
+
+// Reset flags IMMEDIATELY
+waitingForPhoneNumber = false;
+phoneNumberAttemptCount = 0;
+
+// Restart recognition after delay
+setTimeout(() => {
+if (conversationMode === 'continuous' && recognition) {
+try {
+recognition.start();
+} catch(e) {}
+}
+}, 5000);
 }
 
 function promptWhatsApp() {
@@ -862,27 +706,28 @@ speak('No search results to send. Please search first.');
 return;
 }
 waitingForPhoneNumber = true;
-speak('Please say your WhatsApp mobile number with country code. For example: 94771234567');
+phoneNumberAttemptCount = 0;
+speak('Please say your WhatsApp number with country code. For example: 94771234567');
 updateStatus('📱 Say your WhatsApp number');
 
-// Ensure mic is listening
+// Stop current recognition and restart fresh
+if (recognition) {
+recognition.stop();
 setTimeout(() => {
-if (!isListening && recognition) {
 try {
 recognition.start();
-console.log('✅ Mic started for phone number');
+console.log('✅ Mic restarted for phone number');
 } catch(e) {
 console.log('Mic restart error:', e);
 }
+}, 1500);
 }
-}, 1000);
 }
 
 // ==================== MIC SYSTEM ====================
 let recognition = null;
 let isListening = false;
 let isSpeaking = false;
-let apiKey = '';
 let pendingQuery = '';
 let waitingForYes = false;
 let searchCount = 0;
@@ -903,9 +748,8 @@ const countryCodes = {
 
 function initRecognition() {
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
 if (!SpeechRecognition) {
-alert('Please use Chrome browser for voice support');
+alert('Please use Chrome browser');
 return;
 }
 
@@ -913,30 +757,21 @@ recognition = new SpeechRecognition();
 recognition.continuous = true;
 recognition.interimResults = false;
 recognition.lang = currentLanguage;
-recognition.maxAlternatives = 1;
 
 recognition.onstart = function() {
-console.log('✅ Recognition started');
 isListening = true;
 isProcessing = false;
-updateStatus('🎤 Listening... Speak now!');
+updateStatus('🎤 Listening...');
 document.getElementById('micBtn').classList.add('listening');
 };
 
 recognition.onend = function() {
-console.log('❌ Recognition ended');
 isListening = false;
 document.getElementById('micBtn').classList.remove('listening');
-
 if (conversationMode === 'continuous' && !isExplaining && !processLock && !isSpeaking && !waitingForPhoneNumber) {
 setTimeout(() => {
 if (!isListening && !isSpeaking && conversationMode === 'continuous' && !isExplaining && !waitingForPhoneNumber) {
-try {
-recognition.start();
-console.log('✅ Mic auto-restarted');
-} catch (e) {
-console.log('Auto-restart failed:', e.message);
-}
+try { recognition.start(); } catch(e) {}
 }
 }, 1000);
 }
@@ -948,69 +783,48 @@ const currentTime = Date.now();
 
 console.log('🎤 Heard:', text);
 
-// Handle phone number input for WhatsApp - IMPROVED
+// Handle phone number - FIXED TO ONLY PROCESS ONCE
 if (waitingForPhoneNumber) {
-console.log('📱 Waiting for phone number. Heard:', text);
+console.log('📱 Processing phone number. Attempt:', phoneNumberAttemptCount + 1);
 
-// Extract all digits from the spoken text
+// Extract digits only
 const digitsOnly = text.replace(/\D/g, '');
+console.log('Digits extracted:', digitsOnly, 'Length:', digitsOnly.length);
 
-// Also check for number words and convert
-const textWithNumberWords = text.toLowerCase()
-.replace(/oh/g, '0')
-.replace(/zero/g, '0')
-.replace(/one/g, '1')
-.replace(/two/g, '2')
-.replace(/three/g, '3')
-.replace(/four/g, '4')
-.replace(/five/g, '5')
-.replace(/six/g, '6')
-.replace(/seven/g, '7')
-.replace(/eight/g, '8')
-.replace(/nine/g, '9');
-
-const digitsFromWords = textWithNumberWords.replace(/\D/g, '');
-
-// Use whichever has more digits
-let phoneNumber = digitsOnly.length >= digitsFromWords.length ? digitsOnly : digitsFromWords;
-
-console.log('Extracted digits:', phoneNumber, 'Length:', phoneNumber.length);
-
-// Validate: should be 10-15 digits for a valid phone number
-if (phoneNumber.length >= 10 && phoneNumber.length <= 15) {
-console.log('✅ Valid phone number captured:', phoneNumber);
-sendToWhatsApp(phoneNumber);
+// Validate: must be 10-15 digits
+if (digitsOnly.length >= 10 && digitsOnly.length <= 15) {
+console.log('✅ Valid number captured:', digitsOnly);
+sendToWhatsApp(digitsOnly);
+return; // EXIT IMMEDIATELY
+} else if (digitsOnly.length >= 5) {
+// Got some digits but not enough
+phoneNumberAttemptCount++;
+if (phoneNumberAttemptCount >= 3) {
+speak('Let me try a different approach. Please tap the WhatsApp button on the result instead.');
+waitingForPhoneNumber = false;
+phoneNumberAttemptCount = 0;
 return;
-} else if (phoneNumber.length >= 5) {
-// If we got some digits but not enough, ask for clarification
-speak(`I heard ${phoneNumber.length} digits: ${phoneNumber}. Please say the complete number with country code, like 94771234567`);
+}
+speak(`I heard ${digitsOnly.length} digits. Please say the complete number with country code, like 94771234567`);
 return;
 } else {
-// No valid digits found
-speak('I did not hear a valid phone number. Please say the digits clearly. For example: nine four seven seven one two three four five six seven');
+// No valid digits
+phoneNumberAttemptCount++;
+if (phoneNumberAttemptCount >= 3) {
+speak('Please tap the green WhatsApp button on the search result instead.');
+waitingForPhoneNumber = false;
+phoneNumberAttemptCount = 0;
+return;
+}
+speak('I did not hear numbers clearly. Please say digits like: nine four seven seven one two three four five six seven');
 return;
 }
 }
 
-if (isExplaining) {
-const lowerText = text.toLowerCase();
-if (lowerText.includes('anjalee') || lowerText.includes('stop')) {
-stopExplaining();
-return;
-}
-}
-
-if (isExplaining && currentExplainingItem) {
-if (text.length > 5 && !text.toLowerCase().includes('anjalee') && !text.toLowerCase().includes('stop')) {
-searchAdditionalInfo(currentExplainingItem, text);
-}
-return;
-}
-
+// Prevent duplicate processing
 if (text === lastProcessedText && (currentTime - lastProcessedTime) < 5000) {
 return;
 }
-
 if (isProcessing) return;
 
 isProcessing = true;
@@ -1022,62 +836,55 @@ document.getElementById('userMsg').classList.add('show');
 
 const lower = text.toLowerCase();
 
-// Check for WhatsApp command
-if (lower.includes('whatsapp') || lower.includes('send to whatsapp') || lower.includes('send whatsapp')) {
+// WhatsApp command
+if (lower.includes('whatsapp') || lower.includes('send to whatsapp')) {
 promptWhatsApp();
 isProcessing = false;
 return;
 }
 
-if (lower.includes('stop') || lower.includes('goodbye') || lower.includes('bye')) {
-speak('Goodbye!', true);
+// Stop commands
+if (lower.includes('stop') || lower.includes('goodbye')) {
+speak('Goodbye!');
 updateStatus('👋 Ended');
 if (isListening) recognition.stop();
 isProcessing = false;
 return;
 }
 
-if (conversationMode === 'continuous') {
-if (text.length > 5) {
+// Continuous mode search
+if (conversationMode === 'continuous' && text.length > 5) {
 if (isListening) recognition.stop();
 doSearch(text);
 isProcessing = false;
 return;
 }
-}
 
-const wakeWords = ['anjalee', 'anjali', 'angel', 'anjale'];
-let wakeWordFound = false;
-let command = '';
-
+// Wake word detection
+const wakeWords = ['anjalee', 'anjali', 'angel'];
 for (const word of wakeWords) {
 if (lower.includes(word)) {
-wakeWordFound = true;
-command = text.replace(new RegExp(word, 'gi'), '').trim();
-break;
-}
-}
-
-if (wakeWordFound && command.length > 3) {
+const command = text.replace(new RegExp(word, 'gi'), '').trim();
+if (command.length > 3) {
 pendingQuery = command;
 currentSearchQuery = command;
 waitingForYes = true;
-
 if (isListening) recognition.stop();
 speak('Should I search for: "' + command + '"? Say yes or no.', true);
-updateStatus('⏳ Say "yes" or "no"');
-
 setTimeout(() => {
 if (!isSpeaking && waitingForYes) {
 try { recognition.start(); } catch(e) {}
 }
 }, 2500);
-
 isProcessing = false;
-} else if (waitingForYes) {
-isProcessing = false;
+return;
+}
+}
+}
 
-if (lower.includes('yes') || lower.includes('yeah') || lower.includes('sure')) {
+if (waitingForYes) {
+isProcessing = false;
+if (lower.includes('yes') || lower.includes('yeah')) {
 waitingForYes = false;
 doSearch(pendingQuery);
 } else if (lower.includes('no') || lower.includes('nope')) {
@@ -1093,41 +900,27 @@ isProcessing = false;
 recognition.onerror = function(event) {
 console.log('❌ Error:', event.error);
 isProcessing = false;
-
 if (event.error === 'not-allowed') {
-updateStatus('❌ Mic permission denied. Allow in Chrome settings.');
+updateStatus('❌ Allow mic in settings');
 } else if (event.error === 'no-speech') {
-setTimeout(() => {
-try { recognition.start(); } catch(e) {}
-}, 2000);
-} else {
-updateStatus('Error: ' + event.error);
+setTimeout(() => { try { recognition.start(); } catch(e) {} }, 2000);
 }
 };
 
-console.log('✅ Recognition initialized');
+recognition.start();
 }
 
 function toggleMic() {
 if (!recognition) {
-alert('Please save API key first');
+alert('Save API key first');
 return;
 }
-
 if (isListening) {
 recognition.stop();
 isListening = false;
-isProcessing = false;
-document.getElementById('micBtn').classList.remove('listening');
-updateStatus('⏸️ Paused. Tap to resume');
+updateStatus('⏸️ Paused');
 } else {
-isProcessing = false;
-try {
-recognition.start();
-} catch (e) {
-console.error('Mic start error:', e);
-updateStatus('❌ Mic error. Check permissions.');
-}
+try { recognition.start(); } catch(e) {}
 }
 }
 
@@ -1138,7 +931,6 @@ bar.className = 'status';
 if (text.includes('Listening')) bar.classList.add('listening');
 else if (text.includes('Speaking')) bar.classList.add('speaking');
 else if (text.includes('Searching')) bar.classList.add('searching');
-else if (text.includes('ready') || text.includes('Ready') || text.includes('Tap')) bar.classList.add('ready');
 else if (text.includes('WhatsApp')) bar.classList.add('whatsapp');
 }
 
@@ -1148,6 +940,7 @@ selectedCountry = country;
 const count = parseInt(document.getElementById('resultCount').value) || 5;
 
 searchCount++;
+currentSearchQuery = query;
 document.getElementById('searchQuery').textContent = query + ' in ' + countryNames[country];
 document.getElementById('loading').classList.add('show');
 document.getElementById('results').style.display = 'none';
@@ -1167,15 +960,10 @@ gl: countryCodes[country] || 'LK'
 })
 });
 
-if (!searchResponse.ok) {
-throw new Error('API error: ' + searchResponse.status);
-}
+if (!searchResponse.ok) throw new Error('API error: ' + searchResponse.status);
 
 const searchData = await searchResponse.json();
-
-if (!searchData.organic || searchData.organic.length === 0) {
-throw new Error('No results found');
-}
+if (!searchData.organic || searchData.organic.length === 0) throw new Error('No results');
 
 let imageData = { images: [] };
 try {
@@ -1187,31 +975,26 @@ headers: {
 },
 body: JSON.stringify({
 q: query + ' in ' + countryNames[country],
-num: count,
-gl: countryCodes[country] || 'LK'
+num: count
 })
 });
 if (imageResponse.ok) imageData = await imageResponse.json();
-} catch (e) {}
+} catch(e) {}
 
 searchResults = searchData.organic.slice(0, count).map((item, index) => {
 let imageUrl = null;
 if (imageData.images && imageData.images[index]) {
 imageUrl = imageData.images[index].imageUrl;
 }
-
 const priceMatch = item.snippet?.match(/\$[\d,]+|LKR\s*[\d,]+|Rs\.\s*[\d,]+/i);
 const price = priceMatch ? priceMatch[0] : 'Price on request';
-
 let address = countryNames[country];
 const locationMatch = item.snippet?.match(/(?:in|at|near)\s+([A-Z][a-z]+)/i);
 if (locationMatch) address = locationMatch[1] + ', ' + countryNames[country];
-
 const domain = new URL(item.link).hostname;
 let contact = 'Contact: ' + domain;
 const phoneMatch = item.snippet?.match(/(?:phone|tel|call)\s*:?\s*([+\d\s()-]{8,})/i);
 if (phoneMatch) contact = 'Phone: ' + phoneMatch[1].trim();
-
 const features = [];
 if (item.snippet?.match(/\d+\s*bed/i)) features.push('Beds');
 if (item.snippet?.match(/\d+\s*bath/i)) features.push('Baths');
@@ -1223,7 +1006,7 @@ price: price,
 location: address,
 contact: contact,
 features: features,
-description: item.snippet || 'No description',
+description: item.snippet || '',
 imageUrl: imageUrl,
 fullUrl: item.link,
 domain: domain,
@@ -1232,24 +1015,19 @@ country: countryNames[country]
 });
 
 showResults();
-
-const msg = 'Found ' + searchResults.length + ' results in ' + countryNames[country] + '.';
+const msg = 'Found ' + searchResults.length + ' results.';
 document.getElementById('assistText').textContent = msg;
 document.getElementById('assistMsg').classList.add('show');
-
 speak(msg, true);
 
 if (conversationMode === 'continuous') {
-updateStatus('✅ Done! Keep talking! Say "send to WhatsApp" to share results');
+updateStatus('✅ Done! Say "send to WhatsApp" to share');
 setTimeout(() => {
 if (!isListening && conversationMode === 'continuous' && !isExplaining) {
 try { recognition.start(); } catch(e) {}
 }
 }, 2000);
-} else {
-updateStatus('✅ Done! Say "send to WhatsApp" to share results');
 }
-
 } catch (error) {
 const errMsg = 'Error: ' + error.message;
 document.getElementById('assistText').textContent = errMsg;
@@ -1266,9 +1044,7 @@ const list = document.getElementById('resultsList');
 list.innerHTML = searchResults.map((item, i) => `
 <div class="result-card">
 <div class="result-image">
-${item.imageUrl
-? `<img src="${item.imageUrl}" alt="${item.title}" onerror="this.parentElement.innerHTML='<i class=\'fas fa-image\'></i>'">`
-: '<i class="fas fa-home"></i>'}
+${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.title}" onerror="this.parentElement.innerHTML='<i class=\'fas fa-image\'></i>'">` : '<i class="fas fa-home"></i>'}
 </div>
 <div class="result-title">${i+1}. ${item.title}</div>
 <div class="result-price"><i class="fas fa-tag"></i> ${item.price}</div>
@@ -1281,7 +1057,7 @@ ${item.features.map(f => `<span style="background:#dbeafe;color:#1e40af;padding:
 <i class="fas fa-phone"></i> <strong>${item.contact}</strong>
 </div>
 <button class="explain-btn" id="explainBtn-${i}" onclick="explainResult(${i})">
-<i class="fas fa-volume-up"></i> Explain Details
+<i class="fas fa-volume-up"></i> Explain
 </button>
 <button class="whatsapp-btn" onclick="promptWhatsApp()">
 <i class="fab fa-whatsapp"></i> Send to WhatsApp
@@ -1302,7 +1078,8 @@ isProcessing = false;
 isExplaining = false;
 currentExplainingItem = null;
 waitingForPhoneNumber = false;
-updateStatus('🎤 Ready - Keep talking!');
+phoneNumberAttemptCount = 0;
+updateStatus('🎤 Ready');
 setTimeout(() => {
 if (!isListening && conversationMode === 'continuous') {
 try { recognition.start(); } catch(e) {}
@@ -1312,19 +1089,19 @@ try { recognition.start(); } catch(e) {}
 
 function saveAsWord() {
 if (!searchResults.length) { alert('No results'); return; }
-alert('Word save feature active');
+alert('Word save active');
 }
 
 function saveAsPDF() {
 if (!searchResults.length) { alert('No results'); return; }
-alert('PDF save feature active');
+alert('PDF save active');
 }
 
 function saveAsText() {
 if (!searchResults.length) { alert('No results'); return; }
 let content = `ANJALEE RESULTS - ${countryNames[selectedCountry]}\n\n`;
 searchResults.forEach((r, i) => {
-content += `${i+1}. ${r.title}\nPrice: ${r.price}\nLocation: ${r.location}\nContact: ${r.contact}\nURL: ${r.fullUrl}\n\n`;
+content += `${i+1}. ${r.title}\nPrice: ${r.price}\nLocation: ${r.location}\nURL: ${r.fullUrl}\n\n`;
 });
 const blob = new Blob([content], { type: 'text/plain' });
 saveAs(blob, `anjalee-${Date.now()}.txt`);

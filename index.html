@@ -7,7 +7,6 @@
     <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -15,7 +14,6 @@
             --primary: #6366f1;
             --success: #10b981;
             --danger: #ef4444;
-            --warning: #f59e0b;
             --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
@@ -37,18 +35,6 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
 
-        .https-warning {
-            background: linear-gradient(135deg, #fef3c7, #fde68a);
-            border: 3px solid #f59e0b;
-            border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 25px;
-            text-align: center;
-            display: none;
-        }
-
-        .https-warning.show { display: block; }
-
         .login-screen {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -64,12 +50,13 @@
             background: white;
             border-radius: 20px;
             padding: 40px;
-            max-width: 450px;
+            max-width: 400px;
             width: 100%;
             text-align: center;
         }
 
         .login-box h2 { color: #1e293b; margin-bottom: 10px; font-size: 2em; }
+        .login-box p { color: #64748b; margin-bottom: 20px; }
         .login-box input {
             width: 100%; padding: 16px; border: 2px solid #d1d5db;
             border-radius: 12px; font-size: 18px; margin: 15px 0; text-align: center;
@@ -78,13 +65,6 @@
             width: 100%; padding: 16px; background: var(--gradient-1);
             color: white; border: none; border-radius: 12px;
             font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 15px;
-        }
-        
-        .secondary-btn {
-            background: transparent !important;
-            color: #64748b;
-            border: 2px solid #e2e8f0;
-            margin-top: 10px;
         }
 
         .header {
@@ -154,49 +134,6 @@
             animation: pulse 1.5s infinite;
         }
 
-        .mode-selector {
-            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-            border: 2px solid #3b82f6;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        .mode-toggle {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .mode-btn {
-            flex: 1;
-            min-width: 200px;
-            padding: 15px 25px;
-            border: 2px solid #3b82f6;
-            border-radius: 10px;
-            background: white;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .mode-btn.active {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border-color: #667eea;
-        }
-
-        .mode-info {
-            margin-top: 15px;
-            padding: 12px;
-            background: white;
-            border-radius: 8px;
-            font-size: 0.85em;
-            color: #1e40af;
-        }
-
         .message {
             background: #f9fafb;
             border-left: 5px solid #667eea;
@@ -207,13 +144,14 @@
         }
 
         .message.show { display: block; }
+        .message.user { border-left-color: #8b5cf6; background: #f5f3ff; }
+        .message.assistant { border-left-color: #10b981; background: #ecfdf5; }
 
         .message-label {
             font-weight: 700;
             text-transform: uppercase;
             font-size: 11px;
             margin-bottom: 10px;
-            opacity: 0.7;
         }
 
         .result-card {
@@ -224,62 +162,16 @@
             margin: 20px 0;
         }
 
-        .result-image {
-            width: 100%;
-            min-height: 200px;
-            max-height: 400px;
-            background: var(--gradient-1);
-            border-radius: 12px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 4em;
-            overflow: hidden;
-        }
-
-        .result-image img {
-            width: 100%;
-            height: auto;
-            max-height: 400px;
-            object-fit: contain;
-        }
-
-        .result-title { font-weight: 700; color: #1e293b; margin-bottom: 12px; font-size: 1.2em; }
+        .result-title { font-weight: 700; color: #1e293b; margin-bottom: 12px; }
         .result-price { color: #10b981; font-weight: 700; font-size: 1.4em; margin: 10px 0; }
-        .result-location { color: #64748b; margin: 8px 0; font-weight: 500; }
+        .result-location { color: #64748b; margin: 8px 0; }
 
         .result-contact {
-            background: linear-gradient(135deg, #fef3c7, #fde68a);
-            padding: 15px;
+            background: #fef3c7;
+            padding: 12px;
             border-radius: 8px;
             margin-top: 12px;
-            font-size: 0.95em;
             border-left: 4px solid #f59e0b;
-        }
-
-        .result-contact strong {
-            color: #92400e;
-            display: block;
-            margin-bottom: 8px;
-        }
-
-        .result-contact .contact-item {
-            margin: 8px 0;
-            padding: 8px;
-            background: white;
-            border-radius: 6px;
-        }
-
-        .result-contact .contact-item i {
-            color: #f59e0b;
-            width: 20px;
-            margin-right: 8px;
-        }
-
-        .result-contact a {
-            color: #0369a1;
-            text-decoration: none;
         }
 
         .explain-btn {
@@ -290,7 +182,6 @@
             border-radius: 10px;
             cursor: pointer;
             font-weight: 600;
-            font-size: 14px;
             margin-top: 15px;
             width: 100%;
         }
@@ -319,7 +210,7 @@
         .settings select, .settings input {
             width: 100%; padding: 14px;
             border: 2px solid #d1d5db;
-            border-radius: 12px; font-size: 14px;
+            border-radius: 12px;
         }
 
         .save-btns {
@@ -332,224 +223,61 @@
             background: var(--gradient-1); color: white;
             border: none; padding: 14px 24px;
             border-radius: 12px; cursor: pointer;
-            font-weight: 600; flex: 1; min-width: 140px;
-        }
-
-        .language-selector {
-            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-            border: 2px solid #3b82f6;
-            border-radius: 12px;
-            padding: 18px;
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        .language-selector select {
-            width: 100%; max-width: 350px;
-            padding: 14px; border: 2px solid #3b82f6;
-            border-radius: 10px; font-size: 16px; margin-top: 12px;
+            font-weight: 600;
         }
 
         .footer {
             background: #f9fafb; padding: 25px;
-            margin-top: 30px; border-radius: 16px; font-size: 13px;
+            margin-top: 30px; border-radius: 16px;
         }
-
-        .footer ol { margin-left: 25px; line-height: 2.2; }
 
         .logout-btn {
             position: absolute; top: 20px; right: 20px;
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: white; border: none; padding: 10px 20px;
-            border-radius: 8px; cursor: pointer; font-weight: 600;
-        }
-
-        .2fa-setup {
-            background: white;
-            border-radius: 16px;
-            padding: 30px;
-            max-width: 450px;
-            margin: 0 auto;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-
-        .2fa-setup h2 {
-            color: #1e293b;
-            margin-bottom: 20px;
-            font-size: 1.8em;
-        }
-
-        .qr-container {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
-            display: flex;
-            justify-content: center;
-            border: 2px dashed #667eea;
-        }
-
-        .2fa-instructions {
-            background: #f0f9ff;
-            border: 2px solid #0ea5e9;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-            text-align: left;
-        }
-
-        .2fa-instructions ol {
-            margin-left: 20px;
-            line-height: 2;
-        }
-
-        .timer-display {
-            background: #fef3c7;
-            border: 2px solid #f59e0b;
-            border-radius: 8px;
-            padding: 10px;
-            margin: 15px 0;
-            text-align: center;
-            font-weight: 600;
-            color: #92400e;
-        }
-
-        .debug-info {
-            background: #1e293b;
-            color: #10b981;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            font-size: 0.9em;
-            font-family: monospace;
-            text-align: left;
-        }
-
-        .password-warning {
-            background: #fef3c7;
-            border: 2px solid #f59e0b;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-            text-align: left;
-            color: #92400e;
-        }
-
-        .password-warning strong {
-            display: block;
-            margin-bottom: 10px;
-        }
-
-        .password-warning code {
-            background: white;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 1.2em;
-            display: inline-block;
-            margin-top: 5px;
+            background: #ef4444; color: white;
+            border: none; padding: 10px 20px;
+            border-radius: 8px; cursor: pointer;
         }
 
         @media (max-width: 600px) {
             .container { padding: 20px; }
-            h1 { font-size: 1.8em; }
-            .mic-btn { width: 140px; height: 140px; font-size: 50px; }
+            .mic-btn { width: 140px; height: 140px; }
             .settings { grid-template-columns: 1fr; }
-            .save-btns { flex-direction: column; }
-            .save-btn { width: 100%; }
         }
     </style>
 </head>
 <body>
-    <div class="https-warning" id="httpsWarning">
-        <h3>⚠️ IMPORTANT: Use GitHub Pages URL</h3>
-        <p>You're opening this file locally. Voice features won't work!</p>
-        <p>Use: <code>https://pesalasj.github.io/Anjalee/</code></p>
-    </div>
-
-    <!-- 2FA Setup Screen -->
-    <div id="2faSetupScreen" class="login-screen" style="display:none;">
-        <div class="2fa-setup">
-            <h2><i class="fas fa-shield-alt"></i> Setup 2FA</h2>
-            <p style="color:#64748b;margin-bottom:20px;">Scan QR code with Google Authenticator</p>
-            
-            <div class="2fa-instructions">
-                <strong>Steps:</strong>
-                <ol>
-                    <li>Install <strong>Google Authenticator</strong> app</li>
-                    <li>Tap <strong>+</strong> to add account</li>
-                    <li>Scan the QR code below</li>
-                    <li>Enter the 6-digit code from the app</li>
-                    <li>Click "Verify & Complete Setup"</li>
-                </ol>
-            </div>
-
-            <div class="qr-container" id="qrCode"></div>
-            
-            <div class="timer-display">
-                <i class="fas fa-clock"></i> Code changes in: <span id="timer">30</span> seconds
-            </div>
-
-            <div class="debug-info" id="debugInfo">Loading...</div>
-
-            <input type="text" id="2faCode" placeholder="Enter 6-digit code" maxlength="6" inputmode="numeric">
-            <button onclick="verify2FASetup()"><i class="fas fa-check"></i> Verify & Complete Setup</button>
-        </div>
-    </div>
-
-    <!-- Password Screen -->
-    <div id="passwordScreen" class="login-screen" style="display:none;">
-        <div class="2fa-setup">
-            <h2><i class="fas fa-lock"></i> Enter Password</h2>
-            <p style="color:#64748b;margin-bottom:20px;">Enter password to view QR code</p>
-            
-            <div class="password-warning">
-                <strong>⚠️ Default Password:</strong>
-                <code>Colombo1$</code>
-            </div>
-
-            <input type="password" id="adminPassword" placeholder="Enter password">
-            <button onclick="verifyPassword()"><i class="fas fa-unlock"></i> View QR Code</button>
-            <button onclick="showLoginScreen()" class="secondary-btn">
-                <i class="fas fa-arrow-left"></i> Back to Login
-            </button>
-        </div>
-    </div>
-
-    <!-- QR Display Screen -->
-    <div id="qrDisplayScreen" class="login-screen" style="display:none;">
-        <div class="2fa-setup">
-            <h2><i class="fas fa-qrcode"></i> Your QR Code</h2>
-            <div class="qr-container" id="qrCodeDisplay"></div>
-            <button onclick="showLoginScreen()"><i class="fas fa-check"></i> Done</button>
-        </div>
-    </div>
-
-    <!-- Login Screen -->
+    <!-- Simple Login Screen -->
     <div id="loginScreen" class="login-screen">
         <div class="login-box">
-            <h2><i class="fas fa-shield-alt"></i> Anjalee Login</h2>
-            <p style="color:#64748b;margin-bottom:20px;">Enter 2FA Code from Google Authenticator</p>
-            <input type="text" id="twoFACode" placeholder="000000" maxlength="6" inputmode="numeric">
-            <button onclick="verify2FA()"><i class="fas fa-lock"></i> Login</button>
-            <button onclick="showPasswordScreen()" class="secondary-btn" id="viewQRBtn" style="display:none;">
-                <i class="fas fa-qrcode"></i> View QR Code
+            <h2>🎤 Anjalee</h2>
+            <p>Enter password to continue</p>
+            <input type="password" id="loginPassword" placeholder="Enter password">
+            <button onclick="verifyLogin()">
+                <i class="fas fa-lock"></i> Login
             </button>
-            <div class="developer-credit"><strong>Developer:</strong> Pesala S. Jayawardene</div>
+            <p style="margin-top:20px;font-size:0.9em;color:#9ca3af;">
+                Default password: <strong>Colombo1$</strong>
+            </p>
+            <div class="developer-credit" style="margin-top:30px;">
+                <strong>Developer:</strong> Pesala S. Jayawardene
+            </div>
         </div>
     </div>
 
+    <!-- Main App -->
     <div class="container" id="mainContainer" style="display:none;">
-        <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        <button class="logout-btn" onclick="logout()">Logout</button>
 
         <div class="header">
             <h1>🎤 Anjalee</h1>
             <p>Professional Voice Assistant</p>
-            <div class="developer-credit"><strong>Developer:</strong> Pesala S. Jayawardene</div>
+            <div class="developer-credit">
+                <strong>Developer:</strong> Pesala S. Jayawardene
+            </div>
         </div>
 
         <div class="status-bar" id="statusBar">
-            <i class="fas fa-check-circle"></i> <span id="statusBarText">Checking...</span>
+            <i class="fas fa-check-circle"></i> <span id="statusBarText">Ready</span>
         </div>
 
         <div class="setup-box" id="setupBox">
@@ -558,41 +286,20 @@
             <div style="text-align:left;margin:15px 0;color:#78350f;">
                 <ol style="margin-left:20px;line-height:2;">
                     <li>Go to <a href="https://serper.dev" target="_blank">serper.dev</a></li>
-                    <li>Sign Up (FREE)</li>
-                    <li>Copy API Key</li>
-                    <li>Wait 2-3 minutes</li>
-                    <li>Paste below and save</li>
+                    <li>Sign Up (FREE - 2,500 searches/month)</li>
+                    <li>Copy API Key from Dashboard</li>
+                    <li>Wait 2-3 minutes for activation</li>
+                    <li>Paste below and click "Save API Key"</li>
                 </ol>
             </div>
             <input type="password" id="apiKey" placeholder="Paste API key here">
-            <button onclick="saveApiKey()">Save API Key</button>
+            <button onclick="saveApiKey()">
+                <i class="fas fa-save"></i> Save API Key
+            </button>
             <div id="apiStatus" class="status" style="display:none;margin-top:15px;"></div>
         </div>
 
         <div id="mainApp" style="display:none;">
-            <div class="language-selector">
-                <strong>🌍 Select Language:</strong>
-                <select id="languageSelect" onchange="changeLanguage()">
-                    <option value="en-US">🇺🇸 English (US)</option>
-                    <option value="en-GB">🇬🇧 English (UK)</option>
-                    <option value="si-LK">🇱🇰 Sinhala</option>
-                    <option value="ta-LK">🇱🇰 Tamil</option>
-                </select>
-            </div>
-
-            <div class="mode-selector">
-                <h3>💬 Conversation Mode</h3>
-                <div class="mode-toggle">
-                    <button class="mode-btn active" id="continuousMode" onclick="setMode('continuous')">Continuous</button>
-                    <button class="mode-btn" id="saveMode" onclick="setMode('save')">Save Mode</button>
-                </div>
-                <div class="mode-info" id="modeInfo">
-                    <strong>✅ Continuous Mode:</strong> Just keep talking.
-                </div>
-            </div>
-
-            <div class="status" id="status">🎤 Tap microphone to start</div>
-
             <div class="settings">
                 <div>
                     <label><strong>Country:</strong></label>
@@ -600,6 +307,7 @@
                         <option value="lk">🇱🇰 Sri Lanka</option>
                         <option value="in">🇮🇳 India</option>
                         <option value="us">🇺🇸 USA</option>
+                        <option value="gb">🇬🇧 UK</option>
                     </select>
                 </div>
                 <div>
@@ -625,6 +333,7 @@
             <div class="loading" id="loading">
                 <div class="spinner"></div>
                 <p><strong>🔍 Searching...</strong></p>
+                <p id="searchQuery"></p>
             </div>
 
             <div id="results" style="display:none;">
@@ -632,7 +341,7 @@
                 <div id="resultsList"></div>
                 <div class="save-btns">
                     <button onclick="clearResults()" class="save-btn">Clear</button>
-                    <button onclick="saveAsText()" class="save-btn">Save Text</button>
+                    <button onclick="saveAsText()" class="save-btn">Save</button>
                 </div>
             </div>
         </div>
@@ -640,274 +349,38 @@
         <div class="footer">
             <strong>How to Use:</strong>
             <ol>
-                <li>Login with Google Authenticator code</li>
-                <li>Save API key from serper.dev</li>
-                <li>Click microphone and talk</li>
+                <li>Login with password: <strong>Colombo1$</strong></li>
+                <li>Get API key from <a href="https://serper.dev" target="_blank">serper.dev</a> (free)</li>
+                <li>Save API key (it will stay saved)</li>
+                <li>Click microphone and speak</li>
+                <li>Results appear with full details!</li>
             </ol>
-            <p><strong>Developer:</strong> Pesala S. Jayawardene</p>
+            <p style="margin-top:15px;color:#059669;">
+                <strong>✅ Simple & Working!</strong><br>
+                <strong>Developer:</strong> Pesala S. Jayawardene
+            </p>
         </div>
     </div>
 
     <script>
-        // ==================== SIMPLE TOTP USING WEB CRYPTO API ====================
-        class TOTPAuthenticator {
-            constructor() {
-                this.secret = null;
-            }
-
-            generateSecret() {
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-                let secret = '';
-                for (let i = 0; i < 32; i++) {
-                    secret += chars.charAt(Math.floor(Math.random() * chars.length));
-                }
-                this.secret = secret;
-                return secret;
-            }
-
-            async generateTOTP(secret) {
-                try {
-                    const epoch = Math.floor(Date.now() / 1000);
-                    const time = Math.floor(epoch / 30);
-                    
-                    // Convert secret to bytes
-                    const keyBytes = this.base32ToBytes(secret);
-                    
-                    // Create time bytes (8 bytes, big-endian)
-                    const timeBytes = new Uint8Array(8);
-                    for (let i = 7; i >= 0; i--) {
-                        timeBytes[i] = time & 0xff;
-                        time = Math.floor(time / 256);
-                    }
-                    
-                    // Import key
-                    const key = await crypto.subtle.importKey(
-                        'raw',
-                        keyBytes,
-                        { name: 'HMAC', hash: 'SHA-1' },
-                        false,
-                        ['sign']
-                    );
-                    
-                    // Sign
-                    const signature = await crypto.subtle.sign('HMAC', key, timeBytes);
-                    const hash = new Uint8Array(signature);
-                    
-                    // Dynamic truncation
-                    const offset = hash[hash.length - 1] & 0x0f;
-                    const binary = ((hash[offset] & 0x7f) << 24) |
-                        ((hash[offset + 1] & 0xff) << 16) |
-                        ((hash[offset + 2] & 0xff) << 8) |
-                        (hash[offset + 3] & 0xff);
-                    
-                    const otp = binary % 1000000;
-                    return this.leftPad(otp.toString(), 6);
-                } catch (e) {
-                    console.error('TOTP error:', e);
-                    return '000000';
-                }
-            }
-
-            base32ToBytes(base32) {
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-                let bits = '';
-                
-                for (let i = 0; i < base32.length; i++) {
-                    const val = chars.indexOf(base32[i].toUpperCase());
-                    if (val !== -1) {
-                        bits += val.toString(2).padStart(5, '0');
-                    }
-                }
-                
-                const bytes = [];
-                for (let i = 0; i < bits.length; i += 8) {
-                    const byte = bits.substr(i, 8);
-                    if (byte.length === 8) {
-                        bytes.push(parseInt(byte, 2));
-                    }
-                }
-                
-                return new Uint8Array(bytes);
-            }
-
-            leftPad(str, length) {
-                while (str.length < length) str = '0' + str;
-                return str;
-            }
-
-            generateQRCodeURL() {
-                return `otpauth://totp/Anjalee:user@anjalee?secret=${this.secret}&issuer=Anjalee`;
-            }
-
-            async verify(code, secret) {
-                const currentCode = await this.generateTOTP(secret);
-                console.log('Expected:', currentCode, 'Entered:', code);
-                return code === currentCode;
-            }
-        }
-
-        let totpAuth = new TOTPAuthenticator();
-        let timerInterval = null;
-        const ADMIN_PASSWORD = 'Colombo1$';
+        // Simple password authentication
+        const PASSWORD = 'Colombo1$';
 
         window.onload = function() {
-            const isHTTPS = window.location.protocol === 'https:';
-            if (!isHTTPS) {
-                document.getElementById('httpsWarning').classList.add('show');
+            const isLoggedIn = localStorage.getItem('anjalee_loggedIn') === 'true';
+            if (isLoggedIn) {
+                showMainApp();
             }
-            
-            const savedSecret = localStorage.getItem('anjalee_2fa_secret');
-            const isVerified = localStorage.getItem('anjalee_2fa_verified') === 'true';
-            
-            if (savedSecret && isVerified) {
-                document.getElementById('loginScreen').style.display = 'flex';
-                document.getElementById('2faSetupScreen').style.display = 'none';
-                document.getElementById('viewQRBtn').style.display = 'block';
-            } else if (savedSecret) {
-                document.getElementById('2faSetupScreen').style.display = 'flex';
-                document.getElementById('loginScreen').style.display = 'none';
-                setup2FA(false);
-            } else {
-                setup2FA(true);
-            }
-            
-            updateStatusBar();
         };
 
-        async function setup2FA(generateNew = true) {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('2faSetupScreen').style.display = 'flex';
+        function verifyLogin() {
+            const password = document.getElementById('loginPassword').value;
             
-            let secret;
-            if (generateNew) {
-                secret = totpAuth.generateSecret();
-                localStorage.setItem('anjalee_2fa_secret', secret);
-                localStorage.removeItem('anjalee_2fa_verified');
-            } else {
-                secret = localStorage.getItem('anjalee_2fa_secret');
-                totpAuth.secret = secret;
-            }
-            
-            document.getElementById('qrCode').innerHTML = '';
-            new QRCode(document.getElementById('qrCode'), {
-                text: totpAuth.generateQRCodeURL(),
-                width: 200,
-                height: 200
-            });
-            
-            updateDebugInfo(secret);
-            setInterval(() => {
-                if (document.getElementById('2faSetupScreen').style.display !== 'none') {
-                    updateDebugInfo(secret);
-                }
-            }, 1000);
-            
-            startTimer();
-        }
-
-        async function updateDebugInfo(secret) {
-            const code = await totpAuth.generateTOTP(secret);
-            const timeLeft = 30 - (Math.floor(Date.now() / 1000) % 30);
-            document.getElementById('debugInfo').innerHTML = `
-                <div><strong>Secret:</strong> ${secret}</div>
-                <div style="margin:10px 0;"><strong>Current Code:</strong> <span style="font-size:2em;color:#fbbf24;">${code}</span></div>
-                <div><strong>Time Left:</strong> ${timeLeft}s</div>
-            `;
-        }
-
-        function startTimer() {
-            const timerEl = document.getElementById('timer');
-            let seconds = 30 - (Math.floor(Date.now() / 1000) % 30);
-            timerEl.textContent = seconds;
-            timerInterval = setInterval(() => {
-                seconds = seconds <= 1 ? 30 : seconds - 1;
-                timerEl.textContent = seconds;
-            }, 1000);
-        }
-
-        async function verify2FASetup() {
-            const code = document.getElementById('2faCode').value.trim();
-            const secret = localStorage.getItem('anjalee_2fa_secret');
-            
-            if (!code || code.length !== 6) {
-                alert('Enter 6-digit code');
-                return;
-            }
-            
-            const isValid = await totpAuth.verify(code, secret);
-            
-            if (isValid) {
-                localStorage.setItem('anjalee_2fa_verified', 'true');
-                document.getElementById('2faSetupScreen').style.display = 'none';
-                document.getElementById('loginScreen').style.display = 'flex';
-                if (timerInterval) clearInterval(timerInterval);
-                alert('✅ 2FA setup complete!');
-            } else {
-                const currentCode = await totpAuth.generateTOTP(secret);
-                alert(`❌ Invalid code.\nExpected: ${currentCode}\nEntered: ${code}`);
-            }
-        }
-
-        function showPasswordScreen() {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('passwordScreen').style.display = 'flex';
-        }
-
-        function showLoginScreen() {
-            document.getElementById('passwordScreen').style.display = 'none';
-            document.getElementById('qrDisplayScreen').style.display = 'none';
-            document.getElementById('loginScreen').style.display = 'flex';
-        }
-
-        function verifyPassword() {
-            if (document.getElementById('adminPassword').value === ADMIN_PASSWORD) {
-                const secret = localStorage.getItem('anjalee_2fa_secret');
-                if (secret) {
-                    document.getElementById('passwordScreen').style.display = 'none';
-                    document.getElementById('qrDisplayScreen').style.display = 'flex';
-                    document.getElementById('qrCodeDisplay').innerHTML = '';
-                    new QRCode(document.getElementById('qrCodeDisplay'), {
-                        text: `otpauth://totp/Anjalee:user@anjalee?secret=${secret}&issuer=Anjalee`,
-                        width: 200,
-                        height: 200
-                    });
-                }
-            } else {
-                alert('❌ Invalid password');
-            }
-        }
-
-        async function verify2FA() {
-            const code = document.getElementById('twoFACode').value.trim();
-            const secret = localStorage.getItem('anjalee_2fa_secret');
-            
-            if (!code || code.length !== 6) {
-                alert('Enter 6-digit code');
-                return;
-            }
-            
-            const currentCode = await totpAuth.generateTOTP(secret);
-            const isValid = await totpAuth.verify(code, secret);
-            
-            if (isValid) {
+            if (password === PASSWORD) {
                 localStorage.setItem('anjalee_loggedIn', 'true');
                 showMainApp();
             } else {
-                alert(`❌ Invalid code.\nCurrent: ${currentCode}\nEntered: ${code}`);
-            }
-        }
-
-        function updateStatusBar() {
-            const apiKey = localStorage.getItem('anjalee_apiKey');
-            const loggedIn = localStorage.getItem('anjalee_loggedIn') === 'true';
-            const text = document.getElementById('statusBarText');
-            
-            if (loggedIn && apiKey) {
-                text.innerHTML = '✅ Logged in • ✅ API Key Saved';
-            } else if (loggedIn) {
-                text.innerHTML = '✅ Logged in • ⚠️ API Key Needed';
-            } else {
-                text.innerHTML = '⚠️ Not Logged In';
+                alert('❌ Wrong password. Try: Colombo1$');
             }
         }
 
@@ -921,10 +394,8 @@
                 document.getElementById('setupBox').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
                 initRecognition();
-            } else {
-                document.getElementById('setupBox').style.display = 'block';
-                document.getElementById('mainApp').style.display = 'none';
             }
+            
             updateStatusBar();
         }
 
@@ -935,27 +406,30 @@
             }
         }
 
-        let conversationMode = 'continuous';
-
-        function setMode(mode) {
-            conversationMode = mode;
-            document.getElementById('continuousMode').classList.toggle('active', mode === 'continuous');
-            document.getElementById('saveMode').classList.toggle('active', mode === 'save');
-            document.getElementById('modeInfo').innerHTML = mode === 'continuous' ? 
-                '<strong>✅ Continuous Mode:</strong> Just keep talking.' :
-                '<strong>💾 Save Mode:</strong> Say "Anjalee" before search.';
+        function updateStatusBar() {
+            const apiKey = localStorage.getItem('anjalee_apiKey');
+            const text = document.getElementById('statusBarText');
+            
+            if (apiKey) {
+                text.innerHTML = '✅ API Key Saved • Ready';
+            } else {
+                text.innerHTML = '⚠️ API Key Needed';
+            }
         }
 
         function saveApiKey() {
             const key = document.getElementById('apiKey').value.trim();
             if (key.length < 10) {
-                alert('Enter valid API key');
+                alert('Please enter valid API key from serper.dev');
                 return;
             }
+            
             localStorage.setItem('anjalee_apiKey', key);
-            document.getElementById('apiStatus').className = 'status';
-            document.getElementById('apiStatus').style.display = 'block';
-            document.getElementById('apiStatus').innerHTML = '✅ Saved!';
+            
+            const statusDiv = document.getElementById('apiStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '✅ API Key saved!';
+            
             setTimeout(() => {
                 document.getElementById('setupBox').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
@@ -964,36 +438,21 @@
             }, 1000);
         }
 
-        let currentLanguage = 'en-US';
+        // Voice Recognition
         let recognition = null;
         let isListening = false;
-        let isSpeaking = false;
         let searchResults = [];
-        let selectedCountry = 'lk';
-
-        function changeLanguage() {
-            currentLanguage = document.getElementById('languageSelect').value;
-            if (recognition) recognition.lang = currentLanguage;
-        }
-
-        function speak(text) {
-            if (!window.speechSynthesis) return;
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = currentLanguage;
-            window.speechSynthesis.speak(utterance);
-        }
 
         function initRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                alert('Use Chrome browser');
+                alert('Please use Chrome browser');
                 return;
             }
             
             recognition = new SpeechRecognition();
             recognition.continuous = true;
-            recognition.lang = currentLanguage;
+            recognition.lang = 'en-US';
 
             recognition.onstart = () => {
                 isListening = true;
@@ -1004,11 +463,10 @@
             recognition.onend = () => {
                 isListening = false;
                 document.getElementById('micBtn').classList.remove('listening');
-                if (conversationMode === 'continuous') {
-                    setTimeout(() => {
-                        if (!isListening) recognition.start();
-                    }, 1000);
-                }
+                // Auto-restart
+                setTimeout(() => {
+                    if (!isListening) recognition.start();
+                }, 1000);
             };
 
             recognition.onresult = (event) => {
@@ -1016,13 +474,13 @@
                 document.getElementById('userText').textContent = text;
                 document.getElementById('userMsg').classList.add('show');
                 
-                if (text.toLowerCase().includes('stop')) {
+                if (text.toLowerCase().includes('stop') || text.toLowerCase().includes('stop')) {
                     speak('Goodbye!');
                     recognition.stop();
                     return;
                 }
                 
-                if (conversationMode === 'continuous' && text.length > 5) {
+                if (text.length > 5) {
                     recognition.stop();
                     doSearch(text);
                 }
@@ -1041,12 +499,20 @@
             }
         }
 
+        function speak(text) {
+            if (!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9;
+            utterance.pitch = 1.1;
+            window.speechSynthesis.speak(utterance);
+        }
+
         async function doSearch(query) {
             const country = document.getElementById('country').value;
-            selectedCountry = country;
             const count = parseInt(document.getElementById('resultCount').value) || 5;
             
-            document.getElementById('searchQuery').textContent = query;
+            document.getElementById('searchQuery').textContent = query + ' in ' + country;
             document.getElementById('loading').classList.add('show');
             document.getElementById('results').style.display = 'none';
             
@@ -1057,14 +523,20 @@
                         'X-API-KEY': localStorage.getItem('anjalee_apiKey'),
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ q: query + ' in ' + country, num: count })
+                    body: JSON.stringify({
+                        q: query + ' in ' + country,
+                        num: count
+                    })
                 });
+                
+                if (!response.ok) throw new Error('API error: ' + response.status);
                 
                 const data = await response.json();
                 searchResults = data.organic || [];
                 
                 showResults();
-                const msg = `Found ${searchResults.length} results`;
+                
+                const msg = `Found ${searchResults.length} results for "${query}"`;
                 document.getElementById('assistText').textContent = msg;
                 document.getElementById('assistMsg').classList.add('show');
                 speak(msg);
@@ -1080,18 +552,30 @@
             document.getElementById('resultsList').innerHTML = searchResults.map((item, i) => `
                 <div class="result-card">
                     <div class="result-title">${i+1}. ${item.title}</div>
+                    <div class="result-price">Price on request</div>
                     <div class="result-location">${item.snippet?.substring(0, 150)}...</div>
-                    <a href="${item.link}" target="_blank">${item.link}</a>
+                    <div class="result-contact">
+                        <strong>Contact:</strong><br>
+                        Website: <a href="${item.link}" target="_blank">${item.link}</a>
+                    </div>
+                    <button class="explain-btn" onclick="explainResult(${i})">
+                        <i class="fas fa-volume-up"></i> Explain
+                    </button>
                 </div>
             `).join('');
             document.getElementById('results').style.display = 'block';
+        }
+
+        function explainResult(index) {
+            const item = searchResults[index];
+            speak(`${item.title}. ${item.snippet}`);
         }
 
         function clearResults() {
             document.getElementById('results').style.display = 'none';
             document.getElementById('userMsg').classList.remove('show');
             document.getElementById('assistMsg').classList.remove('show');
-            if (conversationMode === 'continuous') recognition.start();
+            recognition.start();
         }
 
         function saveAsText() {

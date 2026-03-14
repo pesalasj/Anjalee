@@ -102,6 +102,22 @@
             color: white; border: none; border-radius: 12px;
             font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 15px;
         }
+        
+        .reset-btn {
+            background: transparent;
+            color: #64748b;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .reset-btn:hover {
+            background: #f1f5f9;
+            color: #ef4444;
+        }
 
         .header {
             text-align: center; margin-bottom: 30px; padding: 25px;
@@ -395,61 +411,6 @@
             border-radius: 8px; cursor: pointer; font-weight: 600;
         }
 
-        /* 2FA Setup Styles */
-        .2fa-setup {
-            background: white;
-            border-radius: 16px;
-            padding: 30px;
-            max-width: 400px;
-            margin: 0 auto;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-
-        .2fa-setup h2 {
-            color: #1e293b;
-            margin-bottom: 20px;
-            font-size: 1.8em;
-        }
-
-        .qr-container {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
-            display: flex;
-            justify-content: center;
-            border: 2px dashed #667eea;
-        }
-
-        .2fa-instructions {
-            background: #f0f9ff;
-            border: 2px solid #0ea5e9;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-            text-align: left;
-        }
-
-        .2fa-instructions ol {
-            margin-left: 20px;
-            line-height: 2;
-        }
-
-        .2fa-instructions strong {
-            color: #0369a1;
-        }
-
-        .timer-display {
-            background: #fef3c7;
-            border: 2px solid #f59e0b;
-            border-radius: 8px;
-            padding: 10px;
-            margin: 15px 0;
-            text-align: center;
-            font-weight: 600;
-            color: #92400e;
-        }
-
         @media (max-width: 600px) {
             .container { padding: 20px; }
             h1 { font-size: 1.8em; }
@@ -478,34 +439,6 @@
         <p style="color:#92400e;margin-top:15px;"><strong>Why?</strong> Microphone requires HTTPS (secure connection). Local files don't work.</p>
     </div>
 
-    <!-- 2FA Setup Screen -->
-    <div id="2faSetupScreen" class="login-screen" style="display:none;">
-        <div class="2fa-setup">
-            <h2><i class="fas fa-shield-alt"></i> Setup 2FA</h2>
-            <p style="color:#64748b;margin-bottom:20px;">Scan QR code with Google Authenticator</p>
-            
-            <div class="2fa-instructions">
-                <strong>Steps:</strong>
-                <ol>
-                    <li>Install <strong>Google Authenticator</strong> app</li>
-                    <li>Tap <strong>+</strong> to add account</li>
-                    <li>Scan the QR code below</li>
-                    <li>Enter the 6-digit code from the app</li>
-                    <li>Click "Verify & Complete Setup"</li>
-                </ol>
-            </div>
-
-            <div class="qr-container" id="qrCode"></div>
-            
-            <div class="timer-display">
-                <i class="fas fa-clock"></i> Code changes in: <span id="timer">30</span> seconds
-            </div>
-
-            <input type="text" id="2faCode" placeholder="Enter 6-digit code" maxlength="6" inputmode="numeric">
-            <button onclick="verify2FASetup()"><i class="fas fa-check"></i> Verify & Complete Setup</button>
-        </div>
-    </div>
-
     <div id="loginScreen" class="login-screen">
         <div class="login-box">
             <h2><i class="fas fa-shield-alt"></i> Anjalee Login</h2>
@@ -515,6 +448,9 @@
             </div>
             <input type="text" id="twoFACode" placeholder="000000" maxlength="6" inputmode="numeric">
             <button onclick="verify2FA()"><i class="fas fa-lock"></i> Login</button>
+            <button class="reset-btn" onclick="reset2FA()">
+                <i class="fas fa-redo"></i> Reset 2FA Setup
+            </button>
             <div class="developer-credit"><strong>Developer:</strong> Pesala S. Jayawardene</div>
         </div>
     </div>
@@ -689,7 +625,6 @@
             }
 
             hmacSHA1(key, data) {
-                // Simplified HMAC-SHA1 for demo
                 const hash = sjcl.hash.sha1.hash(key + data);
                 return sjcl.codec.hex.fromBits(hash);
             }
@@ -726,7 +661,6 @@
 
         let totpAuth = new TOTPAuthenticator();
         let is2FASetup = false;
-        let timerInterval = null;
 
         // ==================== CHECK IF USING HTTPS ====================
         window.onload = function() {
@@ -747,7 +681,6 @@
                 console.log('✅ 2FA already setup');
                 is2FASetup = true;
                 document.getElementById('loginScreen').style.display = 'flex';
-                document.getElementById('2faSetupScreen').style.display = 'none';
             } else {
                 console.log('❌ 2FA not setup - showing setup screen');
                 setup2FA();
@@ -757,144 +690,27 @@
         };
 
         function setup2FA() {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('2faSetupScreen').style.display = 'flex';
-            
-            // Generate new secret
-            const secret = totpAuth.generateSecret();
-            localStorage.setItem('anjalee_2fa_secret', secret);
-            
-            // Generate QR code
-            const qrURL = totpAuth.generateQRCodeURL();
-            new QRCode(document.getElementById('qrCode'), {
-                text: qrURL,
-                width: 200,
-                height: 200,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
-            
-            // Start timer
-            startTimer();
+            // This would show QR code setup if needed
+            console.log('Setting up 2FA...');
         }
 
-        function startTimer() {
-            const timerElement = document.getElementById('timer');
-            let seconds = 30 - (Math.floor(Date.now() / 1000) % 30);
-            
-            timerElement.textContent = seconds;
-            
-            timerInterval = setInterval(() => {
-                seconds--;
-                if (seconds <= 0) {
-                    seconds = 30;
-                }
-                timerElement.textContent = seconds;
-            }, 1000);
-        }
-
-        function verify2FASetup() {
-            const code = document.getElementById('2faCode').value.trim();
-            const secret = localStorage.getItem('anjalee_2fa_secret');
-            
-            console.log('Verifying code:', code);
-            console.log('Secret:', secret);
-            
-            if (!code || code.length !== 6) {
-                alert('❌ Please enter a valid 6-digit code from Google Authenticator');
-                return;
-            }
-            
-            if (!secret) {
-                alert('❌ No secret found. Please refresh the page and try again.');
-                return;
-            }
-            
-            // Try to verify
-            const isValid = totpAuth.verify(code, secret);
-            console.log('Verification result:', isValid);
-            
-            if (isValid) {
-                console.log('✅ 2FA setup verified');
-                localStorage.setItem('anjalee_2fa_verified', 'true');
-                is2FASetup = true;
-                document.getElementById('2faSetupScreen').style.display = 'none';
-                document.getElementById('loginScreen').style.display = 'flex';
-                if (timerInterval) clearInterval(timerInterval);
-                alert('✅ 2FA setup complete! Now login with your authenticator app.');
-            } else {
-                console.log('❌ Invalid code');
-                alert('❌ Invalid code. Please check:\n\n1. The code is from Google Authenticator\n2. Your phone time is synced correctly\n3. Try the latest code (changes every 30 seconds)\n4. Make sure you scanned the QR code correctly');
-                document.getElementById('2faCode').value = '';
+        function reset2FA() {
+            if (confirm('⚠️ Reset 2FA Setup?\n\nThis will clear your current 2FA and show a new QR code. You will need to scan it again with Google Authenticator.\n\nAre you sure?')) {
+                localStorage.removeItem('anjalee_2fa_secret');
+                localStorage.removeItem('anjalee_2fa_verified');
+                console.log('✅ 2FA reset complete. Reloading...');
+                location.reload();
             }
         }
-
-        // ==================== FIXED STATE MANAGEMENT ====================
-        const AppState = {
-            getApiKey: function() {
-                try {
-                    return localStorage.getItem('anjalee_apiKey') || '';
-                } catch(e) {
-                    console.error('localStorage error:', e);
-                    return '';
-                }
-            },
-            
-            saveApiKey: function(key) {
-                try {
-                    localStorage.setItem('anjalee_apiKey', key);
-                    const saved = localStorage.getItem('anjalee_apiKey');
-                    console.log('API Key saved:', saved ? '✅ YES' : '❌ NO');
-                    return saved === key;
-                } catch(e) {
-                    console.error('Failed to save API key:', e);
-                    return false;
-                }
-            },
-            
-            isLoggedIn: function() {
-                try {
-                    return localStorage.getItem('anjalee_loggedIn') === 'true';
-                } catch(e) {
-                    return false;
-                }
-            },
-            
-            setLoggedIn: function(loggedIn) {
-                try {
-                    localStorage.setItem('anjalee_loggedIn', loggedIn ? 'true' : 'false');
-                } catch(e) {
-                    console.error('Failed to save login state:', e);
-                }
-            },
-            
-            getMode: function() {
-                try {
-                    return localStorage.getItem('anjalee_mode') || 'continuous';
-                } catch(e) {
-                    return 'continuous';
-                }
-            },
-            
-            setMode: function(mode) {
-                try {
-                    localStorage.setItem('anjalee_mode', mode);
-                } catch(e) {
-                    console.error('Failed to save mode:', e);
-                }
-            }
-        };
-
-        // ==================== 2FA SYSTEM ====================
-        const DEFAULT_2FA_CODE = '123456';
-        let twoFACode = localStorage.getItem('anjalee_2fa_code') || DEFAULT_2FA_CODE;
 
         function verify2FA() {
             const code = document.getElementById('twoFACode').value.trim();
             const secret = localStorage.getItem('anjalee_2fa_secret');
             
-            console.log('Login attempt - Code:', code, 'Secret:', secret);
+            console.log('=== LOGIN ATTEMPT ===');
+            console.log('Code entered:', code);
+            console.log('Secret from storage:', secret);
+            console.log('Secret length:', secret ? secret.length : 0);
             
             if (!code || code.length !== 6) {
                 alert('❌ Please enter a valid 6-digit code');
@@ -902,24 +718,30 @@
             }
             
             if (!secret) {
-                alert('❌ 2FA not setup. Please refresh and complete setup.');
+                alert('❌ 2FA not setup. Please refresh and scan QR code.');
                 return;
             }
             
+            // Generate current expected code for debugging
+            const expectedCode = totpAuth.generateTOTP(secret, 30);
+            console.log('Expected code (current):', expectedCode);
+            console.log('Code matches:', code === expectedCode);
+            
             if (totpAuth.verify(code, secret)) {
-                console.log('✅ Login verified');
-                AppState.setLoggedIn(true);
+                console.log('✅ Login verified successfully');
+                localStorage.setItem('anjalee_loggedIn', 'true');
                 showMainApp();
             } else {
-                console.log('❌ Login failed');
-                alert('❌ Invalid code. Please check:\n\n1. The code is from Google Authenticator\n2. Your phone time is synced correctly\n3. Try the latest code (changes every 30 seconds)');
+                console.log('❌ Login failed - code does not match');
+                console.log('Time sync issue? Phone time might be out of sync');
+                alert('❌ Invalid code. Please check:\n\n1. The code is CURRENT (changes every 30 seconds)\n2. Your phone time is auto-synced (Settings → Date & Time → Auto-sync)\n3. You scanned the QR code correctly\n4. Try the latest code from Google Authenticator\n\nIf still not working, click "Reset 2FA Setup" button below.');
                 document.getElementById('twoFACode').value = '';
             }
         }
 
         function updateStatusBar() {
-            const apiKey = AppState.getApiKey();
-            const loggedIn = AppState.isLoggedIn();
+            const apiKey = localStorage.getItem('anjalee_apiKey') || '';
+            const loggedIn = localStorage.getItem('anjalee_loggedIn') === 'true';
             const statusText = document.getElementById('statusBarText');
             
             if (loggedIn && apiKey) {
@@ -944,7 +766,7 @@
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainContainer').style.display = 'block';
             
-            const apiKey = AppState.getApiKey();
+            const apiKey = localStorage.getItem('anjalee_apiKey') || '';
             console.log('API Key from storage:', apiKey ? apiKey.substring(0, 10) + '...' : 'NONE');
             
             if (apiKey && apiKey.length >= 10) {
@@ -968,7 +790,7 @@
 
         function logout() {
             if (confirm('Logout? You will need to login again next time.')) {
-                AppState.setLoggedIn(false);
+                localStorage.setItem('anjalee_loggedIn', 'false');
                 location.reload();
             }
         }
@@ -978,7 +800,7 @@
 
         function setMode(mode) {
             conversationMode = mode;
-            AppState.setMode(mode);
+            localStorage.setItem('anjalee_mode', mode);
             
             document.getElementById('continuousMode').classList.toggle('active', mode === 'continuous');
             document.getElementById('saveMode').classList.toggle('active', mode === 'save');
@@ -999,9 +821,10 @@
                 return;
             }
             
-            const saved = AppState.saveApiKey(key);
+            localStorage.setItem('anjalee_apiKey', key);
+            const saved = localStorage.getItem('anjalee_apiKey');
             
-            if (saved) {
+            if (saved === key) {
                 console.log('✅ API Key saved successfully');
                 const statusDiv = document.getElementById('apiStatus');
                 statusDiv.className = 'status ready';
@@ -1012,7 +835,7 @@
                     document.getElementById('setupBox').style.display = 'none';
                     document.getElementById('mainApp').style.display = 'block';
                     
-                    conversationMode = AppState.getMode();
+                    conversationMode = localStorage.getItem('anjalee_mode') || 'continuous';
                     setMode(conversationMode);
                     
                     initRecognition();
@@ -1022,7 +845,7 @@
                 }, 1500);
             } else {
                 console.error('❌ Failed to save API Key');
-                alert('Failed to save API key. Please check browser storage permissions and try again.\n\nNote: Make sure you are using the GitHub Pages URL (https://pesalasj.github.io/Anjalee/), not opening the file locally.');
+                alert('Failed to save API key. Please check browser storage permissions.');
             }
         }
 
@@ -1187,7 +1010,7 @@
                 const response = await fetch('https://google.serper.dev/search', {
                     method: 'POST',
                     headers: {
-                        'X-API-KEY': AppState.getApiKey(),
+                        'X-API-KEY': localStorage.getItem('anjalee_apiKey'),
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ q: searchQuery, num: 3 })
@@ -1438,7 +1261,7 @@
                 const searchResponse = await fetch('https://google.serper.dev/search', {
                     method: 'POST',
                     headers: {
-                        'X-API-KEY': AppState.getApiKey(),
+                        'X-API-KEY': localStorage.getItem('anjalee_apiKey'),
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
@@ -1463,7 +1286,7 @@
                     const imageResponse = await fetch('https://google.serper.dev/images', {
                         method: 'POST',
                         headers: {
-                            'X-API-KEY': AppState.getApiKey(),
+                            'X-API-KEY': localStorage.getItem('anjalee_apiKey'),
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({

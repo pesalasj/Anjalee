@@ -406,6 +406,7 @@ h1 { font-size: 1.8em; }
 <option value="in">🇮🇳 India</option>
 <option value="us">🇺🇸 USA</option>
 <option value="gb">🇬🇧 UK</option>
+<option value="world">🌍 Worldwide</option>
 </select>
 </div>
 <div>
@@ -500,6 +501,9 @@ localStorage.setItem('anjalee_mode', mode);
 // ==================== 2FA SYSTEM ====================
 const DEFAULT_2FA_CODE = '123456';
 let twoFACode = localStorage.getItem('anjalee_2fa_code') || DEFAULT_2FA_CODE;
+
+// Search history to avoid repeats
+let searchHistory = new Set();
 
 window.onload = function() {
 console.log('=== Anjalee Voice Assistant ===');
@@ -933,7 +937,7 @@ async function handleDiscussion(question) {
 updateStatus('💬 Searching answer...');
 
 try {
-// Search for answer
+// Search for answer - use worldwide search for discussions
 const response = await fetch('https://google.serper.dev/search', {
 method: 'POST',
 headers: {
@@ -1000,11 +1004,11 @@ let selectedCountry = 'lk';
 let isProcessing = false;
 
 const countryNames = {
-'lk': 'Sri Lanka', 'in': 'India', 'us': 'USA', 'gb': 'UK'
+'lk': 'Sri Lanka', 'in': 'India', 'us': 'USA', 'gb': 'UK', 'world': 'Worldwide'
 };
 
 const countryCodes = {
-'lk': 'LK', 'in': 'IN', 'us': 'US', 'gb': 'GB'
+'lk': 'LK', 'in': 'IN', 'us': 'US', 'gb': 'GB', 'world': ''
 };
 
 function initRecognition() {
@@ -1264,6 +1268,23 @@ const country = document.getElementById('country').value;
 selectedCountry = country;
 const count = parseInt(document.getElementById('resultCount').value) || 5;
 
+// Check if this query was already searched
+const normalizedQuery = query.toLowerCase().trim();
+if (searchHistory.has(normalizedQuery)) {
+speak('I already searched for that. Try asking something different.', true);
+updateStatus('⚠️ Already searched');
+isProcessing = false;
+return;
+}
+
+// Add to search history
+searchHistory.add(normalizedQuery);
+if (searchHistory.size > 20) {
+// Keep only last 20 searches
+const arr = Array.from(searchHistory);
+searchHistory = new Set(arr.slice(-20));
+}
+
 searchCount++;
 document.getElementById('searchQuery').textContent = query + ' in ' + countryNames[country];
 document.getElementById('loading').classList.add('show');
@@ -1278,9 +1299,9 @@ headers: {
 'Content-Type': 'application/json'
 },
 body: JSON.stringify({
-q: query + ' in ' + countryNames[country],
+q: query + (country === 'world' ? '' : ' in ' + countryNames[country]),
 num: count,
-gl: countryCodes[country] || 'LK'
+gl: countryCodes[country] || ''
 })
 });
 
@@ -1294,6 +1315,7 @@ if (!searchData.organic || searchData.organic.length === 0) {
 throw new Error('No results found');
 }
 
+// Always fetch images
 let imageData = { images: [] };
 try {
 const imageResponse = await fetch('https://google.serper.dev/images', {
@@ -1303,13 +1325,14 @@ headers: {
 'Content-Type': 'application/json'
 },
 body: JSON.stringify({
-q: query + ' in ' + countryNames[country],
-num: count,
-gl: countryCodes[country] || 'LK'
+q: query + (country === 'world' ? '' : ' in ' + countryNames[country]),
+num: count
 })
 });
 if (imageResponse.ok) imageData = await imageResponse.json();
-} catch (e) {}
+} catch (e) {
+console.log('Image search error:', e);
+}
 
 searchResults = searchData.organic.slice(0, count).map((item, index) => {
 let imageUrl = null;
@@ -1320,9 +1343,9 @@ imageUrl = imageData.images[index].imageUrl;
 const priceMatch = item.snippet?.match(/\$[\d,]+|LKR\s*[\d,]+|Rs\.\s*[\d,]+/i);
 const price = priceMatch ? priceMatch[0] : 'Price on request';
 
-let address = countryNames[country];
+let address = country === 'world' ? 'Worldwide' : countryNames[country];
 const locationMatch = item.snippet?.match(/(?:in|at|near)\s+([A-Z][a-z]+)/i);
-if (locationMatch) address = locationMatch[1] + ', ' + countryNames[country];
+if (locationMatch) address = locationMatch[1] + (country === 'world' ? '' : ', ' + countryNames[country]);
 
 const domain = new URL(item.link).hostname;
 let contact = 'Contact: ' + domain;
@@ -1385,7 +1408,7 @@ list.innerHTML = searchResults.map((item, i) => `
 <div class="result-image">
 ${item.imageUrl
 ? `<img src="${item.imageUrl}" alt="${item.title}" onerror="this.parentElement.innerHTML='<i class=\'fas fa-image\'></i>'">`
-: '<i class="fas fa-home"></i>'}
+: '<i class="fas fa-image"></i>'}
 </div>
 <div class="result-title">${i+1}. ${item.title}</div>
 <div class="result-price"><i class="fas fa-tag"></i> ${item.price}</div>

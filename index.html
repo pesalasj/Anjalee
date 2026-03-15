@@ -811,18 +811,35 @@ return { type: 'question', confidence: 0.7 };
 
 async function generateIntelligentResponse(input, intent) {
 const lower = input.toLowerCase();
+const country = document.getElementById('country').value;
+const countryName = countryNames[country] || 'Sri Lanka';
 
-// For ALL questions and information requests - ALWAYS search internet
+console.log('🌍 Selected country:', countryName);
+
+// For ALL questions and information requests - ALWAYS search internet WITH COUNTRY CONTEXT
 if (intent.type === 'question' || intent.type === 'information' || intent.type === 'suggestion' || intent.type === 'solution') {
-await searchAndProvideAnswer(input);
-return; // searchAndProvideAnswer speaks the answer
+// Build search query WITH country context
+let searchQuery = input;
+
+// Add country context if not already mentioned
+if (!lower.includes(countryName.toLowerCase()) && 
+    !lower.includes('usa') && 
+    !lower.includes('united states') &&
+    !lower.includes('uk') &&
+    !lower.includes('united kingdom')) {
+searchQuery = input + ' in ' + countryName;
+}
+
+console.log('🔍 Searching for:', searchQuery);
+await searchAndProvideAnswer(searchQuery, true); // true = short answer mode
+return;
 }
 
 // Default: still search for better answers
-await searchAndProvideAnswer(input);
+await searchAndProvideAnswer(input, true);
 }
 
-async function searchAndProvideAnswer(query) {
+async function searchAndProvideAnswer(query, shortAnswer = false) {
 console.log('🔍 Searching for:', query);
 updateStatus('🔍 Searching for accurate answer...');
 
@@ -840,13 +857,22 @@ if (!response.ok) throw new Error('API error: ' + response.status);
 const data = await response.json();
 
 if (data.organic && data.organic.length > 0) {
+// Get the first result for short answer
+const firstResult = data.organic[0];
+let answer = firstResult.snippet;
+
+// If user wants short answer, just give the first snippet
+if (shortAnswer) {
+speak(answer, true);
+} else {
 // Combine top results for comprehensive answer
 const answers = data.organic.slice(0, 3).map(r => r.snippet).join('. ');
-// Speak the actual answer - no "I searched" commentary
 speak(answers, true);
+}
+
 lastSearchQuery = query;
-conversationContext.push({ query: query, answer: answers, timestamp: Date.now() });
-console.log('✅ Answered:', answers.substring(0, 100) + '...');
+conversationContext.push({ query: query, answer: answer, timestamp: Date.now() });
+console.log('✅ Answered:', answer.substring(0, 100) + '...');
 } else {
 speak('I couldn\'t find specific information on that. Could you rephrase your question?', true);
 }
@@ -1046,6 +1072,16 @@ async function handleDiscussion(userInput) {
 const lowerInput = userInput.toLowerCase();
 
 console.log('💬 Discussion input:', userInput);
+
+// Check if user wants more details
+if (lowerInput.includes('more details') || lowerInput.includes('more information') || lowerInput.includes('tell me more') || lowerInput.includes('explain more')) {
+// Provide detailed answer for last search
+if (lastSearchQuery) {
+console.log('🔍 Providing detailed answer for:', lastSearchQuery);
+await searchAndProvideAnswer(lastSearchQuery, false); // false = detailed mode
+return;
+}
+}
 
 // Analyze user intent with AI
 userIntent = analyzeUserIntent(userInput);

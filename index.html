@@ -734,12 +734,18 @@ speak('Document exported successfully.', true);
 }
 
 function addToDictation(text, speaker) {
+console.log('📝 addToDictation called:', { text, speaker, currentDictationText: dictationText });
+
 if (dictationText === 'Dictated text will appear here...') {
 dictationText = '';
 document.getElementById('dictationText').innerHTML = '';
 }
 
 const dictationDiv = document.getElementById('dictationText');
+if (!dictationDiv) {
+console.error('❌ dictationText element not found!');
+return;
+}
 
 // Add speaker label if new speaker
 const speakerLabel = document.createElement('span');
@@ -755,9 +761,12 @@ dictationText += speaker + ': ' + text + '\n\n';
 
 // Auto-scroll to bottom
 const dictationArea = document.getElementById('dictationArea');
+if (dictationArea) {
 dictationArea.scrollTop = dictationArea.scrollHeight;
+}
 
 console.log('✅ Added to dictation:', speaker, '-', text);
+console.log('✅ Current dictationText length:', dictationText.length);
 }
 
 // ==================== AI INTELLIGENCE ENGINE ====================
@@ -775,7 +784,9 @@ if (lower.includes('?') ||
     lower.includes('which') ||
     lower.includes('can you') ||
     lower.includes('tell me') ||
-    lower.includes('show me')) {
+    lower.includes('show me') ||
+    lower.includes('i need') ||
+    lower.includes('i want')) {
 return { type: 'question', confidence: 0.9 };
 }
 
@@ -794,42 +805,25 @@ if (lower.includes('solution') || lower.includes('solve') || lower.includes('fix
 return { type: 'solution', confidence: 0.8 };
 }
 
-// Default: conversation
-return { type: 'conversation', confidence: 0.5 };
+// Default: search anyway for better answers
+return { type: 'question', confidence: 0.7 };
 }
 
 async function generateIntelligentResponse(input, intent) {
 const lower = input.toLowerCase();
 
-// For questions and information requests - ALWAYS search internet
-if (intent.type === 'question' || intent.type === 'information') {
+// For ALL questions and information requests - ALWAYS search internet
+if (intent.type === 'question' || intent.type === 'information' || intent.type === 'suggestion' || intent.type === 'solution') {
 await searchAndProvideAnswer(input);
 return; // searchAndProvideAnswer speaks the answer
 }
 
-// For suggestions
-if (intent.type === 'suggestion') {
-const topic = input.replace(/suggest|recommend|ideas/gi, '').trim();
-if (topic) {
-await searchAndProvideAnswer(`best suggestions for ${topic}`);
-return;
-}
-}
-
-// For solutions
-if (intent.type === 'solution') {
-const problem = input.replace(/solution|solve|fix|help/gi, '').trim();
-if (problem) {
-await searchAndProvideAnswer(`how to solve ${problem}`);
-return;
-}
-}
-
-// Default conversation
-speak('I understand. Could you tell me more about what you\'d like to know?', true);
+// Default: still search for better answers
+await searchAndProvideAnswer(input);
 }
 
 async function searchAndProvideAnswer(query) {
+console.log('🔍 Searching for:', query);
 updateStatus('🔍 Searching for accurate answer...');
 
 try {
@@ -842,7 +836,7 @@ headers: {
 body: JSON.stringify({ q: query, num: 3 })
 });
 
-if (!response.ok) throw new Error('API error');
+if (!response.ok) throw new Error('API error: ' + response.status);
 const data = await response.json();
 
 if (data.organic && data.organic.length > 0) {
@@ -857,8 +851,8 @@ console.log('✅ Answered:', answers.substring(0, 100) + '...');
 speak('I couldn\'t find specific information on that. Could you rephrase your question?', true);
 }
 } catch (error) {
+console.error('❌ Search error:', error);
 speak('I\'m having trouble accessing information right now. Please try again.', true);
-console.log('❌ Search error:', error);
 }
 
 updateStatus('💬 Ready for next question');
@@ -1308,7 +1302,9 @@ console.log('✅ Recognition initialized');
 function handleDictation(text) {
 const lower = text.toLowerCase();
 
-console.log('📝 Dictation:', text, 'enrollmentDone:', enrollmentDone, 'isDictating:', isDictating);
+console.log('📝 Dictation:', text);
+console.log('📝 enrollmentDone:', enrollmentDone);
+console.log('📝 isDictating:', isDictating);
 
 // Check for speaker identification (ONLY ONCE)
 if (!enrollmentDone && lower.includes('i am')) {
@@ -1319,9 +1315,10 @@ if (name && name.length > 1) {
 currentSpeaker = name;
 speakers[name] = true;
 enrollmentDone = true; // CRITICAL: Mark as done
+console.log('✅ Speaker enrolled:', name);
+console.log('✅ enrollmentDone set to:', enrollmentDone);
 speak(`Welcome ${name}. Say "Start dictating" when ready.`, true);
 updateStatus(`👤 Welcome ${name} - Say "Start dictating"`);
-console.log('✅ Speaker enrolled:', name);
 }
 }
 isProcessing = false;
@@ -1332,9 +1329,9 @@ return;
 if (lower.includes('start dictating') || lower.includes('start typing')) {
 console.log('🎯 Start dictation command detected');
 isDictating = true; // CRITICAL: Set to true
+console.log('✅ isDictating set to:', isDictating);
 speak('Ready. Speak now.', true);
 updateStatus('📝 Dictating...');
-console.log('✅ Dictation STARTED - isDictating =', isDictating);
 isProcessing = false;
 return; // EXIT - don't add this text
 }
@@ -1349,9 +1346,9 @@ return;
 // Check for stop
 if (lower.includes('stop') || lower.includes('end')) {
 isDictating = false;
+console.log('✅ Dictation stopped');
 speak('Dictation stopped.', true);
 updateStatus('✅ Stopped');
-console.log('✅ Dictation stopped');
 isProcessing = false;
 return;
 }

@@ -500,7 +500,7 @@ h1 { font-size: 1.8em; }
 <li><strong>Start Talking:</strong> Say what you're looking for</li>
 <li><strong>Results Appear:</strong> With images, prices, and contact details</li>
 <li><strong>Dictation:</strong> Click Dictation mode, say "Start dictating", speak your text</li>
-<li><strong>Learn Mode:</strong> In Discussion mode, click "Learn About Me" for personalized conversation</li>
+<li><strong>Learn Mode:</strong> In Discussion mode, click "Learn About Me" for intelligent conversation</li>
 </ol>
 <p style="margin-top:15px;padding:15px;background:#fef3c7;border-radius:8px;color:#92400e;">
 <strong>✅ API Key:</strong> Saved permanently in your browser<br>
@@ -548,20 +548,20 @@ let isDictating = false;
 let currentSpeaker = 'Unknown';
 let speakers = {};
 let dictationText = '';
-let enrollmentMode = true;
 let enrollmentDone = false;
 
 // Discussion/Learn variables
 let isLearning = false;
-let learningStep = 0;
 let userProfile = {
 name: '',
 interests: [],
 goals: [],
-preferences: {}
+preferences: {},
+context: []
 };
 let lastAnsweredQuestion = '';
 let questionAsked = false;
+let conversationContext = [];
 
 window.onload = function() {
 console.log('=== Anjalee Voice Assistant ===');
@@ -682,12 +682,10 @@ info.innerHTML = '<strong>💬 Discussion Mode:</strong> Ask me anything! Click 
 dictationSection.style.display = 'none';
 learnBtnContainer.style.display = 'block';
 isLearning = false;
-learningStep = 0;
 lastAnsweredQuestion = '';
 questionAsked = false;
-// Don't speak greeting every time - only on first entry
 if (!questionAsked) {
-speak('Hello! Ask me any question.', true);
+speak('Hello! Ask me anything.', true);
 questionAsked = true;
 }
 updateStatus('💬 Discussion - Ask me anything');
@@ -695,15 +693,14 @@ updateStatus('💬 Discussion - Ask me anything');
 info.innerHTML = '<strong>📝 Dictation Mode:</strong> Say "I am" followed by your name. Say "Start dictating" when ready.';
 dictationSection.style.display = 'block';
 learnBtnContainer.style.display = 'none';
-enrollmentMode = true;
 enrollmentDone = false;
 isDictating = false;
 currentSpeaker = 'Unknown';
 speakers = {};
 dictationText = '';
 document.getElementById('dictationText').innerHTML = 'Dictated text will appear here...';
-speak('Dictation mode. Please say "I am" followed by your name to identify yourself.', true);
-updateStatus('🎤 Recognizing voices - Say "I am [name]"');
+speak('Dictation mode. Please say "I am" followed by your name.', true);
+updateStatus('🎤 Say "I am [name]" to identify yourself');
 }
 }
 
@@ -748,7 +745,6 @@ if (confirm('Clear all dictated text?')) {
 dictationText = '';
 speakers = {};
 currentSpeaker = 'Unknown';
-enrollmentMode = true;
 enrollmentDone = false;
 isDictating = false;
 document.getElementById('dictationText').innerHTML = 'Dictated text will appear here...';
@@ -819,18 +815,10 @@ if (conversationMode !== 'discussion') {
 setMode('discussion');
 }
 isLearning = true;
-learningStep = 0;
-userProfile = { name: '', interests: [], goals: [], preferences: {} };
+userProfile = { name: '', interests: [], goals: [], preferences: {}, context: [] };
+conversationContext = [];
 
-const questions = [
-"Hello! I'd love to get to know you. What's your name?",
-"Nice to meet you, {name}! What are you most interested in learning about today?",
-"What are your goals or what would you like to achieve?",
-"Is there anything specific I can help you with right now?",
-"Thank you for sharing! I'm here whenever you need help. What would you like to do next?"
-];
-
-speak(questions[0], true);
+speak('Great! Let\'s get to know each other. Tell me about yourself.', true);
 updateStatus('🧠 Learning about you...');
 document.getElementById('learnBtn').classList.add('active');
 }
@@ -841,74 +829,93 @@ const lowerInput = userInput.toLowerCase();
 // Check for stop command during learning
 if (lowerInput.includes('stop') || lowerInput.includes('end learn') || lowerInput.includes('exit learn')) {
 isLearning = false;
-speak('Learning mode paused. You can ask me questions anytime or click Learn again to continue.', true);
+speak('Sounds good! Feel free to ask me anything anytime.', true);
 updateStatus('💬 Discussion mode');
 document.getElementById('learnBtn').classList.remove('active');
 return;
 }
 
-// Intelligent response based on learning step
-switch(learningStep) {
-case 0: // Get name
-userProfile.name = userInput.trim();
-speak(`Nice to meet you, ${userProfile.name}! What are you most interested in learning about today?`, true);
-learningStep = 1;
-break;
+// Intelligently learn from user input
+learnFromInput(userInput);
 
-case 1: // Get interests
-const interests = userInput.toLowerCase();
-if (interests.includes('technology') || interests.includes('tech') || interests.includes('computer')) {
-userProfile.interests.push('technology');
-}
-if (interests.includes('health') || interests.includes('fitness') || interests.includes('wellness')) {
-userProfile.interests.push('health');
-}
-if (interests.includes('business') || interests.includes('work') || interests.includes('career')) {
-userProfile.interests.push('business');
-}
-if (interests.includes('education') || interests.includes('study') || interests.includes('learn')) {
-userProfile.interests.push('education');
-}
-if (interests.includes('travel') || interests.includes('tourism') || interests.includes('vacation')) {
-userProfile.interests.push('travel');
+// Respond naturally based on what user shared
+const response = generateIntelligentResponse(userInput);
+speak(response, true);
+
+updateStatus('💬 Learning conversation');
 }
 
-speak(`Great! I've noted your interest in ${userInput}. What are your goals or what would you like to achieve?`, true);
-learningStep = 2;
-break;
+function learnFromInput(input) {
+const lower = input.toLowerCase();
 
-case 2: // Get goals
-userProfile.goals.push(userInput);
-speak(`Thank you for sharing your goals. Is there anything specific I can help you with right now?`, true);
-learningStep = 3;
-break;
-
-case 3: // Get immediate needs
-if (lowerInput.includes('search') || lowerInput.includes('find') || lowerInput.includes('look up') || lowerInput.includes('?')) {
-// User wants to search - handle the search
-handleDiscussion(userInput);
-} else {
-speak(`Thank you for sharing! I'm here whenever you need help. What would you like to do next? You can ask me questions, search for information, or we can continue our conversation.`, true);
-learningStep = 4;
+// Extract name
+if (lower.includes('my name is') || lower.includes('i am') || lower.includes('call me')) {
+const nameMatch = input.match(/(?:my name is|i am|call me)\s+([A-Z][a-z]+)/i);
+if (nameMatch) {
+userProfile.name = nameMatch[1];
+console.log('✅ Learned name:', userProfile.name);
 }
-break;
+}
 
-case 4: // Continue conversation
-// Now use the learned profile to provide personalized responses
+// Extract interests
+const interestKeywords = ['like', 'love', 'enjoy', 'interested in', 'passionate about', 'hobby', 'hobbies'];
+if (interestKeywords.some(k => lower.includes(k))) {
+if (lower.includes('technology') || lower.includes('tech')) userProfile.interests.push('technology');
+if (lower.includes('health') || lower.includes('fitness')) userProfile.interests.push('health');
+if (lower.includes('business') || lower.includes('work')) userProfile.interests.push('business');
+if (lower.includes('education') || lower.includes('study')) userProfile.interests.push('education');
+if (lower.includes('travel')) userProfile.interests.push('travel');
+if (lower.includes('music')) userProfile.interests.push('music');
+if (lower.includes('sports')) userProfile.interests.push('sports');
+if (lower.includes('reading') || lower.includes('books')) userProfile.interests.push('reading');
+console.log('✅ Learned interests:', userProfile.interests);
+}
+
+// Extract goals
+const goalKeywords = ['want to', 'goal', 'aim to', 'plan to', 'hope to', 'would like to'];
+if (goalKeywords.some(k => lower.includes(k))) {
+userProfile.goals.push(input);
+console.log('✅ Learned goals:', userProfile.goals);
+}
+
+// Save to conversation context
+conversationContext.push({ input: input, timestamp: Date.now() });
+if (conversationContext.length > 20) conversationContext.shift();
+}
+
+function generateIntelligentResponse(input) {
+const lower = input.toLowerCase();
+
+// If user shared name
+if (userProfile.name && lower.includes('my name is') || lower.includes('i am')) {
+return `Nice to meet you, ${userProfile.name}! What would you like to talk about?`;
+}
+
+// If user shared interests
 if (userProfile.interests.length > 0) {
-const interest = userProfile.interests[0];
-if (lowerInput.includes(interest) || lowerInput.includes('more about') || lowerInput.includes('tell me')) {
-// Search for information about their interest
-handleDiscussion(`latest information about ${interest}`);
-return;
+const lastInterest = userProfile.interests[userProfile.interests.length - 1];
+if (lower.includes(lastInterest)) {
+return `That's great! I'd love to hear more about your interest in ${lastInterest}. What specifically interests you?`;
 }
-}
-// Default: ask what they need
-speak(`Based on what you've shared, I can help you with ${userProfile.interests.join(', ') || 'various topics'}. What would you like to know more about?`, true);
-break;
 }
 
-updateStatus('🧠 Learning: Step ' + (learningStep + 1) + '/5');
+// If user shared goals
+if (userProfile.goals.length > 0 && (lower.includes('want') || lower.includes('goal') || lower.includes('plan'))) {
+return `That sounds like a meaningful goal. How can I help you achieve it?`;
+}
+
+// Ask follow-up questions based on context
+if (conversationContext.length < 3) {
+return `Tell me more about that. What else are you passionate about?`;
+}
+
+// Reference learned information
+if (userProfile.interests.length > 0 && userProfile.name) {
+return `${userProfile.name}, based on what you've shared, I can help you with ${userProfile.interests.join(', ')}. What would you like to explore?`;
+}
+
+// Default intelligent response
+return `I understand. Feel free to ask me anything or share more about yourself.`;
 }
 
 // ==================== VOICE SYSTEM ====================
@@ -1084,13 +1091,13 @@ const data = await response.json();
 
 if (data.organic && data.organic.length > 0) {
 const snippet = data.organic[0].snippet;
-speak(`I found: ${snippet.substring(0, 200)}.`, true);
+speak(`${snippet.substring(0, 200)}.`, true);
 } else {
-speak('Could not find that information.', true);
+speak('I couldn\'t find that information.', true);
 }
 
 } catch (error) {
-speak('Sorry, could not search right now.', true);
+speak('Let me think about that differently.', true);
 }
 }
 
@@ -1102,24 +1109,22 @@ console.log('💬 Discussion input:', userInput);
 
 // Check if this question was already answered (prevent repeats)
 if (lowerInput === lastAnsweredQuestion.toLowerCase()) {
-speak('I already answered that question. Would you like to ask something different?', true);
+speak('I already answered that. What else would you like to know?', true);
 return;
 }
 
-// Check for explicit search requests - THESE TRIGGER INTERNET SEARCH
+// Check for explicit search requests
 const searchTriggers = [
-'search for', 'find', 'look up', 'google', 'what is', 'who is', 
-'where is', 'how to', 'show me', 'tell me about', 'information about',
+'search for', 'find', 'look up', 'what is', 'who is', 
+'where is', 'how to', 'tell me about', 'information about',
 'news about', 'latest', 'current', 'recent', 'explain', 'define',
-'when', 'why', 'which', 'can you', 'do you know', 'give me',
-'list', 'describe', 'summarize'
+'when', 'why', 'which', 'can you', 'do you know'
 ];
 
 const wantsSearch = searchTriggers.some(trigger => lowerInput.includes(trigger));
 
 if (wantsSearch || lowerInput.includes('?')) {
-// Search the internet and provide answer - NO unnecessary commentary
-updateStatus('💬 Searching internet...');
+// Search silently and provide answer naturally
 console.log('🔍 Searching for:', userInput);
 
 try {
@@ -1137,32 +1142,29 @@ const data = await response.json();
 
 if (data.organic && data.organic.length > 0) {
 const result = data.organic[0];
-const answer = `${result.title}. ${result.snippet}`;
-// Just give the answer directly - no "I found" or "I will check"
+// Just give the answer naturally - no "I found" or "I searched"
+const answer = `${result.snippet}`;
 speak(answer, true);
 lastAnsweredQuestion = userInput;
-updateStatus('💬 Ready for next question');
-console.log('✅ Found answer:', answer);
+console.log('✅ Answered:', answer);
 } else {
-speak('I could not find information about that. Please try asking differently.', true);
-updateStatus('💬 No results found');
+speak('I\'m not sure about that. Can you ask differently?', true);
 }
 } catch (error) {
-speak('Sorry, I could not search right now. Please try again.', true);
-updateStatus('❌ Search error');
+speak('Let me think about that.', true);
 console.log('❌ Search error:', error);
 }
 } else {
-// Respond conversationally without searching - keep it brief
+// Natural conversation
 const responses = {
-'hello': 'Hello! What would you like to know?',
-'hi': 'Hi! Ask me anything.',
-'hey': 'Hey! What\'s your question?',
+'hello': 'Hello! What\'s on your mind?',
+'hi': 'Hi! How can I help?',
+'hey': 'Hey! What\'s up?',
 'thank': 'You\'re welcome!',
-'thanks': 'My pleasure!',
-'how are you': 'I\'m well, thank you! Ready to help.',
-'bye': 'Goodbye!',
-'goodbye': 'Take care!'
+'thanks': 'Anytime!',
+'how are you': 'I\'m great! Ready to help you.',
+'bye': 'Take care!',
+'goodbye': 'See you later!'
 };
 
 let responded = false;
@@ -1170,19 +1172,17 @@ for (const [key, response] of Object.entries(responses)) {
 if (lowerInput.includes(key)) {
 speak(response, true);
 responded = true;
-console.log('✅ Conversational response:', response);
 break;
 }
 }
 
 if (!responded) {
-// Not a clear question - brief invitation
-speak('Feel free to ask me anything!', true);
-console.log('✅ Brief follow-up');
+// Natural follow-up
+speak('Tell me more about that.', true);
+}
 }
 
-updateStatus('💬 Listening...');
-}
+updateStatus('💬 Conversation');
 }
 
 // ==================== MIC SYSTEM ====================
@@ -1229,21 +1229,21 @@ isListening = true;
 isProcessing = false;
 
 if (conversationMode === 'dictation') {
-if (enrollmentMode && !enrollmentDone) {
-updateStatus('🎤 Recognizing voices - Say "I am [name]"');
+if (!enrollmentDone) {
+updateStatus('🎤 Say "I am [name]" to identify yourself');
 } else if (!isDictating) {
-updateStatus('🎤 Dictation - Say "Start dictating"');
+updateStatus('🎤 Say "Start dictating" to begin');
 } else {
 updateStatus('📝 Dictating...');
 }
 } else if (conversationMode === 'discussion') {
 if (isLearning) {
-updateStatus('🧠 Learning mode - Answer my questions');
+updateStatus('🧠 Learning conversation');
 } else {
-updateStatus('💬 Discussion mode - Ask questions');
+updateStatus('💬 Ask me anything');
 }
 } else {
-updateStatus('🎤 Listening... Speak now!');
+updateStatus('🎤 Listening...');
 }
 
 document.getElementById('micBtn').classList.add('listening');
@@ -1267,7 +1267,6 @@ console.log('Auto-restart failed:', e.message);
 }
 }, 1000);
 } else if (conversationMode === 'dictation') {
-// Always keep listening in dictation mode
 setTimeout(() => {
 if (!isListening) {
 try {
@@ -1277,7 +1276,6 @@ console.log('✅ Dictation mic restarted');
 }
 }, 1000);
 } else if (conversationMode === 'discussion') {
-// Always keep listening in discussion mode
 setTimeout(() => {
 if (!isListening) {
 try {
@@ -1423,7 +1421,7 @@ console.log('❌ Error:', event.error);
 isProcessing = false;
 
 if (event.error === 'not-allowed') {
-updateStatus('❌ Mic permission denied. Allow in Chrome settings.');
+updateStatus('❌ Mic permission denied');
 } else if (event.error === 'no-speech') {
 setTimeout(() => {
 try { recognition.start(); } catch(e) {}
@@ -1440,21 +1438,20 @@ console.log('✅ Recognition initialized');
 function handleDictation(text) {
 const lower = text.toLowerCase();
 
-console.log('📝 Dictation processing:', text, 'enrollmentMode:', enrollmentMode, 'isDictating:', isDictating, 'enrollmentDone:', enrollmentDone);
+console.log('📝 Dictation:', text, 'enrollmentDone:', enrollmentDone, 'isDictating:', isDictating);
 
 // Check for speaker identification (ONLY ONCE)
-if (enrollmentMode && !enrollmentDone && lower.includes('i am')) {
+if (!enrollmentDone && lower.includes('i am')) {
 const nameMatch = text.match(/i am\s+(.+)/i);
 if (nameMatch) {
 const name = nameMatch[1].trim();
 if (name && name.length > 1) {
 currentSpeaker = name;
 speakers[name] = true;
-enrollmentDone = true; // CRITICAL: Mark enrollment as done
-enrollmentMode = false; // CRITICAL: Disable enrollment mode
-speak(`Welcome, ${name}. Say "Start dictating" when ready to begin.`, true);
-updateStatus(`👤 Speaker identified: ${name} - Say "Start dictating"`);
-console.log('✅ Speaker enrolled:', name, 'enrollmentDone set to true');
+enrollmentDone = true; // CRITICAL: Mark as done
+speak(`Welcome ${name}. Say "Start dictating" when ready.`, true);
+updateStatus(`👤 Welcome ${name} - Say "Start dictating"`);
+console.log('✅ Speaker enrolled:', name);
 }
 }
 isProcessing = false;
@@ -1463,33 +1460,27 @@ return;
 
 // Check for start commands - CRITICAL FIX
 if (lower.includes('start dictating') || lower.includes('start typing')) {
-console.log('🎯 Start command detected - switching to dictation mode');
-// Set dictation mode FIRST before any other processing
-isDictating = true;
-// DO NOT speak again if already dictating
-if (!enrollmentDone) {
-enrollmentDone = true;
-enrollmentMode = false;
-}
-speak('Dictation started. Speak your text now.', true);
+console.log('🎯 Start dictation command detected');
+isDictating = true; // CRITICAL: Set to true
+speak('Ready. Speak now.', true);
 updateStatus('📝 Dictating...');
-console.log('✅ Dictation mode activated');
+console.log('✅ Dictation STARTED');
 isProcessing = false;
-return; // EXIT IMMEDIATELY - don't process this text
+return; // EXIT - don't add this text
 }
 
-// Only process dictation if actively dictating
+// Only process if actively dictating
 if (!isDictating) {
-console.log('⏸️ Not dictating yet - waiting for start command');
+console.log('⏸️ Not dictating yet');
 isProcessing = false;
 return;
 }
 
-// Check for stop commands
-if (lower.includes('stop') || lower.includes('end') || lower.includes('end typing') || lower.includes('end of dictating')) {
+// Check for stop
+if (lower.includes('stop') || lower.includes('end')) {
 isDictating = false;
-speak('Dictation stopped. You can export your document.', true);
-updateStatus('✅ Dictation stopped');
+speak('Dictation stopped.', true);
+updateStatus('✅ Stopped');
 console.log('✅ Dictation stopped');
 isProcessing = false;
 return;
@@ -1503,10 +1494,10 @@ isProcessing = false;
 return;
 }
 
-// Add to dictation if text is meaningful (and not a command)
-if (text.length > 2 && !lower.includes('start') && !lower.includes('stop')) {
+// Add text to dictation
+if (text.length > 2) {
 addToDictation(text, currentSpeaker);
-console.log('✅ Added to dictation:', text);
+console.log('✅ Added:', text);
 }
 
 isProcessing = false;
@@ -1523,14 +1514,14 @@ recognition.stop();
 isListening = false;
 isProcessing = false;
 document.getElementById('micBtn').classList.remove('listening');
-updateStatus('⏸️ Paused. Tap to resume');
+updateStatus('⏸️ Paused');
 } else {
 isProcessing = false;
 try {
 recognition.start();
 } catch (e) {
 console.error('Mic start error:', e);
-updateStatus('❌ Mic error. Check permissions.');
+updateStatus('❌ Mic error');
 }
 }
 }
@@ -1639,7 +1630,7 @@ country: countryNames[country]
 
 showResults();
 
-const msg = 'Found ' + searchResults.length + ' results in ' + countryNames[country] + '.';
+const msg = 'Found ' + searchResults.length + ' results.';
 document.getElementById('assistText').textContent = msg;
 document.getElementById('assistMsg').classList.add('show');
 
@@ -1704,7 +1695,7 @@ waitingForYes = false;
 isProcessing = false;
 isExplaining = false;
 currentExplainingItem = null;
-updateStatus('🎤 Ready - Keep talking!');
+updateStatus('🎤 Ready');
 setTimeout(() => {
 if (!isListening && conversationMode === 'continuous') {
 try { recognition.start(); } catch(e) {}
@@ -1714,23 +1705,23 @@ try { recognition.start(); } catch(e) {}
 
 function saveAsWord() {
 if (!searchResults.length) { alert('No results'); return; }
-alert('Word save feature active');
+alert('Word save active');
 }
 
 function saveAsPDF() {
 if (!searchResults.length) { alert('No results'); return; }
-alert('PDF save feature active');
+alert('PDF save active');
 }
 
 function saveAsText() {
 if (!searchResults.length) { alert('No results'); return; }
-let content = `ANJALEE RESULTS - ${countryNames[selectedCountry]}\n\n`;
+let content = `ANJALEE RESULTS\n\n`;
 searchResults.forEach((r, i) => {
 content += `${i+1}. ${r.title}\nPrice: ${r.price}\nLocation: ${r.location}\nContact: ${r.contact}\nURL: ${r.fullUrl}\n\n`;
 });
 const blob = new Blob([content], { type: 'text/plain' });
 saveAs(blob, `anjalee-${Date.now()}.txt`);
-alert('✅ Text saved!');
+alert('✅ Saved!');
 }
 </script>
 </body>

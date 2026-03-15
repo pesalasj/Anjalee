@@ -162,6 +162,27 @@ border-radius: 8px;
 font-size: 0.85em;
 color: #1e40af;
 }
+.learn-btn-container {
+margin-top: 15px;
+}
+.learn-btn {
+background: linear-gradient(135deg, #10b981, #059669);
+color: white;
+border: none;
+padding: 12px 30px;
+border-radius: 10px;
+cursor: pointer;
+font-weight: 600;
+font-size: 14px;
+box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+.learn-btn:hover {
+transform: translateY(-2px);
+box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+.learn-btn.active {
+background: linear-gradient(135deg, #f59e0b, #d97706);
+}
 .message {
 background: #f9fafb;
 border-left: 5px solid #667eea;
@@ -402,6 +423,12 @@ h1 { font-size: 1.8em; }
 <div class="mode-info" id="modeInfo">
 <strong>✅ Continuous Mode:</strong> Just keep talking.
 </div>
+<!-- Learn Button - Only shows in Discussion Mode -->
+<div class="learn-btn-container" id="learnBtnContainer" style="display:none;">
+<button class="learn-btn" id="learnBtn" onclick="startLearnMode()">
+<i class="fas fa-brain"></i> Learn About Me
+</button>
+</div>
 </div>
 <div class="status" id="status">🎤 Tap microphone to start</div>
 <div class="settings">
@@ -473,6 +500,7 @@ h1 { font-size: 1.8em; }
 <li><strong>Start Talking:</strong> Say what you're looking for</li>
 <li><strong>Results Appear:</strong> With images, prices, and contact details</li>
 <li><strong>Dictation:</strong> Click Dictation mode, say "Start dictating", speak your text</li>
+<li><strong>Learn Mode:</strong> In Discussion mode, click "Learn About Me" for personalized conversation</li>
 </ol>
 <p style="margin-top:15px;padding:15px;background:#fef3c7;border-radius:8px;color:#92400e;">
 <strong>✅ API Key:</strong> Saved permanently in your browser<br>
@@ -521,6 +549,7 @@ let currentSpeaker = 'Unknown';
 let speakers = {};
 let dictationText = '';
 let enrollmentMode = true;
+let enrollmentDone = false;
 
 // Discussion/Learn variables
 let isLearning = false;
@@ -532,6 +561,7 @@ goals: [],
 preferences: {}
 };
 let lastAnsweredQuestion = '';
+let questionAsked = false;
 
 window.onload = function() {
 console.log('=== Anjalee Voice Assistant ===');
@@ -635,27 +665,38 @@ document.getElementById('dictationMode').classList.toggle('active', mode === 'di
 
 const info = document.getElementById('modeInfo');
 const dictationSection = document.getElementById('dictationSection');
+const learnBtnContainer = document.getElementById('learnBtnContainer');
 
 if (mode === 'continuous') {
 info.innerHTML = '<strong>✅ Continuous Mode:</strong> Just keep talking.';
 dictationSection.style.display = 'none';
+learnBtnContainer.style.display = 'none';
 isLearning = false;
 } else if (mode === 'save') {
 info.innerHTML = '<strong>💾 Save Mode:</strong> Say "Anjalee" before each search.';
 dictationSection.style.display = 'none';
+learnBtnContainer.style.display = 'none';
 isLearning = false;
 } else if (mode === 'discussion') {
-info.innerHTML = '<strong>💬 Discussion Mode:</strong> Ask me anything! Click "Learn" for intelligent conversation.';
+info.innerHTML = '<strong>💬 Discussion Mode:</strong> Ask me anything! Click "Learn About Me" for personalized conversation.';
 dictationSection.style.display = 'none';
+learnBtnContainer.style.display = 'block';
 isLearning = false;
 learningStep = 0;
 lastAnsweredQuestion = '';
-speak('Hello! Ask me any question, or click the Learn button for a personalized conversation.', true);
-updateStatus('💬 Discussion - Ask me anything or click Learn');
+questionAsked = false;
+// Don't speak greeting every time - only on first entry
+if (!questionAsked) {
+speak('Hello! Ask me any question.', true);
+questionAsked = true;
+}
+updateStatus('💬 Discussion - Ask me anything');
 } else {
 info.innerHTML = '<strong>📝 Dictation Mode:</strong> Say "I am" followed by your name. Say "Start dictating" when ready.';
 dictationSection.style.display = 'block';
+learnBtnContainer.style.display = 'none';
 enrollmentMode = true;
+enrollmentDone = false;
 isDictating = false;
 currentSpeaker = 'Unknown';
 speakers = {};
@@ -708,6 +749,7 @@ dictationText = '';
 speakers = {};
 currentSpeaker = 'Unknown';
 enrollmentMode = true;
+enrollmentDone = false;
 isDictating = false;
 document.getElementById('dictationText').innerHTML = 'Dictated text will appear here...';
 speak('Dictation cleared.', true);
@@ -790,6 +832,7 @@ const questions = [
 
 speak(questions[0], true);
 updateStatus('🧠 Learning about you...');
+document.getElementById('learnBtn').classList.add('active');
 }
 
 function handleLearnMode(userInput) {
@@ -800,6 +843,7 @@ if (lowerInput.includes('stop') || lowerInput.includes('end learn') || lowerInpu
 isLearning = false;
 speak('Learning mode paused. You can ask me questions anytime or click Learn again to continue.', true);
 updateStatus('💬 Discussion mode');
+document.getElementById('learnBtn').classList.remove('active');
 return;
 }
 
@@ -1074,7 +1118,7 @@ const searchTriggers = [
 const wantsSearch = searchTriggers.some(trigger => lowerInput.includes(trigger));
 
 if (wantsSearch || lowerInput.includes('?')) {
-// Search the internet and provide answer
+// Search the internet and provide answer - NO unnecessary commentary
 updateStatus('💬 Searching internet...');
 console.log('🔍 Searching for:', userInput);
 
@@ -1094,6 +1138,7 @@ const data = await response.json();
 if (data.organic && data.organic.length > 0) {
 const result = data.organic[0];
 const answer = `${result.title}. ${result.snippet}`;
+// Just give the answer directly - no "I found" or "I will check"
 speak(answer, true);
 lastAnsweredQuestion = userInput;
 updateStatus('💬 Ready for next question');
@@ -1108,16 +1153,16 @@ updateStatus('❌ Search error');
 console.log('❌ Search error:', error);
 }
 } else {
-// Respond conversationally without searching
+// Respond conversationally without searching - keep it brief
 const responses = {
-'hello': 'Hello! What would you like to know today?',
-'hi': 'Hi there! Ask me anything and I\'ll search for the answer.',
-'hey': 'Hey! I\'m here to help. What\'s your question?',
-'thank': 'You\'re welcome! Is there anything else you\'d like to know?',
-'thanks': 'My pleasure! Feel free to ask me anything.',
-'how are you': 'I\'m doing well, thank you! Ready to answer your questions.',
-'bye': 'Goodbye! Come back anytime you have questions.',
-'goodbye': 'Take care! I\'m here whenever you need help.'
+'hello': 'Hello! What would you like to know?',
+'hi': 'Hi! Ask me anything.',
+'hey': 'Hey! What\'s your question?',
+'thank': 'You\'re welcome!',
+'thanks': 'My pleasure!',
+'how are you': 'I\'m well, thank you! Ready to help.',
+'bye': 'Goodbye!',
+'goodbye': 'Take care!'
 };
 
 let responded = false;
@@ -1131,10 +1176,9 @@ break;
 }
 
 if (!responded) {
-// Not a clear question - invite them to ask
-const followUp = 'I\'m ready to help! Just ask me a question using words like "what is", "how to", "tell me about", or "search for".';
-speak(followUp, true);
-console.log('✅ Follow-up response:', followUp);
+// Not a clear question - brief invitation
+speak('Feel free to ask me anything!', true);
+console.log('✅ Brief follow-up');
 }
 
 updateStatus('💬 Listening...');
@@ -1185,7 +1229,7 @@ isListening = true;
 isProcessing = false;
 
 if (conversationMode === 'dictation') {
-if (enrollmentMode) {
+if (enrollmentMode && !enrollmentDone) {
 updateStatus('🎤 Recognizing voices - Say "I am [name]"');
 } else if (!isDictating) {
 updateStatus('🎤 Dictation - Say "Start dictating"');
@@ -1396,20 +1440,21 @@ console.log('✅ Recognition initialized');
 function handleDictation(text) {
 const lower = text.toLowerCase();
 
-console.log('📝 Dictation processing:', text, 'enrollmentMode:', enrollmentMode, 'isDictating:', isDictating);
+console.log('📝 Dictation processing:', text, 'enrollmentMode:', enrollmentMode, 'isDictating:', isDictating, 'enrollmentDone:', enrollmentDone);
 
-// Check for speaker identification (continue until "start dictating")
-if (enrollmentMode && lower.includes('i am')) {
+// Check for speaker identification (ONLY ONCE)
+if (enrollmentMode && !enrollmentDone && lower.includes('i am')) {
 const nameMatch = text.match(/i am\s+(.+)/i);
 if (nameMatch) {
 const name = nameMatch[1].trim();
 if (name && name.length > 1) {
 currentSpeaker = name;
 speakers[name] = true;
-enrollmentMode = false; // CRITICAL FIX: Set enrollmentMode to false after first identification
+enrollmentDone = true; // CRITICAL: Mark enrollment as done
+enrollmentMode = false; // CRITICAL: Disable enrollment mode
 speak(`Welcome, ${name}. Say "Start dictating" when ready to begin.`, true);
 updateStatus(`👤 Speaker identified: ${name} - Say "Start dictating"`);
-console.log('✅ Speaker enrolled:', name, 'enrollmentMode set to false');
+console.log('✅ Speaker enrolled:', name, 'enrollmentDone set to true');
 }
 }
 isProcessing = false;
@@ -1421,7 +1466,12 @@ if (lower.includes('start dictating') || lower.includes('start typing')) {
 console.log('🎯 Start command detected - switching to dictation mode');
 // Set dictation mode FIRST before any other processing
 isDictating = true;
-speak('Dictation started. Speak your text now. Say "new paragraph" for a new paragraph. Say "stop" when done.', true);
+// DO NOT speak again if already dictating
+if (!enrollmentDone) {
+enrollmentDone = true;
+enrollmentMode = false;
+}
+speak('Dictation started. Speak your text now.', true);
 updateStatus('📝 Dictating...');
 console.log('✅ Dictation mode activated');
 isProcessing = false;

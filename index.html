@@ -818,16 +818,39 @@ console.log('🌍 Selected country:', countryName);
 
 // For ALL questions and information requests - ALWAYS search internet WITH COUNTRY CONTEXT
 if (intent.type === 'question' || intent.type === 'information' || intent.type === 'suggestion' || intent.type === 'solution') {
-// Build search query WITH country context
+// Build search query WITH country context - IMPROVED LOGIC
 let searchQuery = input;
 
-// Add country context if not already mentioned
+// Check if user is asking about photography/locations/travel
+const isPhotographyQuery = lower.includes('picture') || lower.includes('photograph') || lower.includes('photo') || lower.includes('camera');
+const isTravelQuery = lower.includes('go to') || lower.includes('visit') || lower.includes('travel') || lower.includes('tour');
+const isLocationQuery = lower.includes('where') || lower.includes('place') || lower.includes('location') || lower.includes('spot');
+
+// If it's about photography/travel/locations, search for those specific things
+if (isPhotographyQuery || isTravelQuery || isLocationQuery) {
+// Don't add generic "in [country]" if user already mentioned a specific place
+if (!lower.includes('anuradhapura') && !lower.includes('colombo') && !lower.includes('kandy')) {
 if (!lower.includes(countryName.toLowerCase()) && 
     !lower.includes('usa') && 
     !lower.includes('united states') &&
     !lower.includes('uk') &&
     !lower.includes('united kingdom')) {
 searchQuery = input + ' in ' + countryName;
+}
+}
+// If user mentioned a specific place, use that
+else if (lower.includes('anuradhapura')) {
+searchQuery = input.replace('anuradhapura', 'Anuradhapura Sri Lanka');
+}
+} else {
+// For other queries, add country context if not already mentioned
+if (!lower.includes(countryName.toLowerCase()) && 
+    !lower.includes('usa') && 
+    !lower.includes('united states') &&
+    !lower.includes('uk') &&
+    !lower.includes('united kingdom')) {
+searchQuery = input + ' in ' + countryName;
+}
 }
 
 console.log('🔍 Searching for:', searchQuery);

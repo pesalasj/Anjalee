@@ -108,7 +108,7 @@ animation: pulse 1.5s infinite;
 .status.ready { background: #f0fdf4; color: #059669; border: 2px solid #10b981; }
 .status.dictating { background: #fef3c7; color: #92400e; border: 2px solid #f59e0b; }
 .status.discussing { background: #dbeafe; color: #1e40af; border: 2px solid #3b82f6; }
-.status.whatsapp { background: #dcfce7; color: #166534; border: 2px solid #22c55e; }
+.status.learning { background: #f0fdf4; color: #059669; border: 2px solid #10b981; }
 @keyframes pulse {
 0%, 100% { opacity: 1; }
 50% { opacity: 0.7; }
@@ -227,18 +227,6 @@ cursor: pointer;
 font-weight: 600;
 font-size: 14px;
 margin-top: 15px;
-width: 100%;
-}
-.whatsapp-btn {
-background: linear-gradient(135deg, #25d366, #128c7e);
-color: white;
-border: none;
-padding: 12px 20px;
-border-radius: 10px;
-cursor: pointer;
-font-weight: 600;
-font-size: 14px;
-margin-top: 10px;
 width: 100%;
 }
 .loading { text-align: center; padding: 40px; display: none; }
@@ -446,9 +434,6 @@ h1 { font-size: 1.8em; }
 <button onclick="exportDictation()" class="save-btn" style="background:#10b981; margin:10px 5px;">
 <i class="fas fa-download"></i> Export Word
 </button>
-<button onclick="sendDictationWhatsApp()" class="save-btn" style="background:#25d366; margin:10px 5px;">
-<i class="fab fa-whatsapp"></i> Send WhatsApp
-</button>
 </div>
 <div class="dictation-area" id="dictationArea">
 <div class="dictation-text" id="dictationText">Dictated text will appear here...</div>
@@ -487,7 +472,6 @@ h1 { font-size: 1.8em; }
 <li><strong>Click Microphone:</strong> Allow permission when asked (ONE TIME ONLY)</li>
 <li><strong>Start Talking:</strong> Say what you're looking for</li>
 <li><strong>Results Appear:</strong> With images, prices, and contact details</li>
-<li><strong>WhatsApp:</strong> Say "send to WhatsApp" and speak your mobile number</li>
 <li><strong>Dictation:</strong> Click Dictation mode, say "Start dictating", speak your text</li>
 </ol>
 <p style="margin-top:15px;padding:15px;background:#fef3c7;border-radius:8px;color:#92400e;">
@@ -496,6 +480,7 @@ h1 { font-size: 1.8em; }
 <strong>✅ Mic Permission:</strong> Granted once, saved forever<br>
 <strong>📱 Samsung/Chrome:</strong> Fully supported<br>
 <strong>📝 Dictation:</strong> Multi-speaker support with voice recognition<br>
+<strong>🧠 Learn Mode:</strong> Click "Learn" button for intelligent conversation<br>
 <strong>Developer:</strong> Pesala S. Jayawardene
 </p>
 </div>
@@ -536,16 +521,17 @@ let currentSpeaker = 'Unknown';
 let speakers = {};
 let dictationText = '';
 let enrollmentMode = true;
-let enrollmentCount = 0;
 
-// Discussion variables
-let conversationStarted = false;
-let lastQuestionAnswered = '';
-let userPreferences = {};
-
-// WhatsApp variables
-let waitingForPhoneNumber = false;
-let phoneNumberAttemptCount = 0;
+// Discussion/Learn variables
+let isLearning = false;
+let learningStep = 0;
+let userProfile = {
+name: '',
+interests: [],
+goals: [],
+preferences: {}
+};
+let lastAnsweredQuestion = '';
 
 window.onload = function() {
 console.log('=== Anjalee Voice Assistant ===');
@@ -651,20 +637,21 @@ const info = document.getElementById('modeInfo');
 const dictationSection = document.getElementById('dictationSection');
 
 if (mode === 'continuous') {
-info.innerHTML = '<strong>✅ Continuous Mode:</strong> Just keep talking. Say "send to WhatsApp" to share results.';
+info.innerHTML = '<strong>✅ Continuous Mode:</strong> Just keep talking.';
 dictationSection.style.display = 'none';
-conversationStarted = false;
+isLearning = false;
 } else if (mode === 'save') {
-info.innerHTML = '<strong>💾 Save Mode:</strong> Say "Anjalee" before each search. Say "send to WhatsApp" to share.';
+info.innerHTML = '<strong>💾 Save Mode:</strong> Say "Anjalee" before each search.';
 dictationSection.style.display = 'none';
-conversationStarted = false;
+isLearning = false;
 } else if (mode === 'discussion') {
-info.innerHTML = '<strong>💬 Discussion Mode:</strong> Ask me anything! I\'ll search and answer your questions.';
+info.innerHTML = '<strong>💬 Discussion Mode:</strong> Ask me anything! Click "Learn" for intelligent conversation.';
 dictationSection.style.display = 'none';
-conversationStarted = false;
-lastQuestionAnswered = '';
-speak('Hello! I\'m ready to answer your questions. What would you like to know?', true);
-updateStatus('💬 Discussion - Ask me anything');
+isLearning = false;
+learningStep = 0;
+lastAnsweredQuestion = '';
+speak('Hello! Ask me any question, or click the Learn button for a personalized conversation.', true);
+updateStatus('💬 Discussion - Ask me anything or click Learn');
 } else {
 info.innerHTML = '<strong>📝 Dictation Mode:</strong> Say "I am" followed by your name. Say "Start dictating" when ready.';
 dictationSection.style.display = 'block';
@@ -673,7 +660,6 @@ isDictating = false;
 currentSpeaker = 'Unknown';
 speakers = {};
 dictationText = '';
-enrollmentCount = 0;
 document.getElementById('dictationText').innerHTML = 'Dictated text will appear here...';
 speak('Dictation mode. Please say "I am" followed by your name to identify yourself.', true);
 updateStatus('🎤 Recognizing voices - Say "I am [name]"');
@@ -723,7 +709,6 @@ speakers = {};
 currentSpeaker = 'Unknown';
 enrollmentMode = true;
 isDictating = false;
-enrollmentCount = 0;
 document.getElementById('dictationText').innerHTML = 'Dictated text will appear here...';
 speak('Dictation cleared.', true);
 updateStatus('🎤 Dictation cleared - Say "I am [name]"');
@@ -759,18 +744,6 @@ speak('Document exported successfully.', true);
 });
 }
 
-function sendDictationWhatsApp() {
-if (!dictationText || dictationText === 'Dictated text will appear here...') {
-alert('No text to send');
-return;
-}
-
-const message = encodeURIComponent(`*Anjalee Dictation*\n\n${dictationText}`);
-const whatsappURL = `https://wa.me/?text=${message}`;
-window.open(whatsappURL, '_blank');
-speak('Opening WhatsApp to send dictation.', true);
-}
-
 function addToDictation(text, speaker) {
 if (dictationText === 'Dictated text will appear here...') {
 dictationText = '';
@@ -796,6 +769,102 @@ const dictationArea = document.getElementById('dictationArea');
 dictationArea.scrollTop = dictationArea.scrollHeight;
 
 console.log('✅ Added to dictation:', speaker, '-', text);
+}
+
+// ==================== LEARN MODE - INTELLIGENT CONVERSATION ====================
+function startLearnMode() {
+if (conversationMode !== 'discussion') {
+setMode('discussion');
+}
+isLearning = true;
+learningStep = 0;
+userProfile = { name: '', interests: [], goals: [], preferences: {} };
+
+const questions = [
+"Hello! I'd love to get to know you. What's your name?",
+"Nice to meet you, {name}! What are you most interested in learning about today?",
+"What are your goals or what would you like to achieve?",
+"Is there anything specific I can help you with right now?",
+"Thank you for sharing! I'm here whenever you need help. What would you like to do next?"
+];
+
+speak(questions[0], true);
+updateStatus('🧠 Learning about you...');
+}
+
+function handleLearnMode(userInput) {
+const lowerInput = userInput.toLowerCase();
+
+// Check for stop command during learning
+if (lowerInput.includes('stop') || lowerInput.includes('end learn') || lowerInput.includes('exit learn')) {
+isLearning = false;
+speak('Learning mode paused. You can ask me questions anytime or click Learn again to continue.', true);
+updateStatus('💬 Discussion mode');
+return;
+}
+
+// Intelligent response based on learning step
+switch(learningStep) {
+case 0: // Get name
+userProfile.name = userInput.trim();
+speak(`Nice to meet you, ${userProfile.name}! What are you most interested in learning about today?`, true);
+learningStep = 1;
+break;
+
+case 1: // Get interests
+const interests = userInput.toLowerCase();
+if (interests.includes('technology') || interests.includes('tech') || interests.includes('computer')) {
+userProfile.interests.push('technology');
+}
+if (interests.includes('health') || interests.includes('fitness') || interests.includes('wellness')) {
+userProfile.interests.push('health');
+}
+if (interests.includes('business') || interests.includes('work') || interests.includes('career')) {
+userProfile.interests.push('business');
+}
+if (interests.includes('education') || interests.includes('study') || interests.includes('learn')) {
+userProfile.interests.push('education');
+}
+if (interests.includes('travel') || interests.includes('tourism') || interests.includes('vacation')) {
+userProfile.interests.push('travel');
+}
+
+speak(`Great! I've noted your interest in ${userInput}. What are your goals or what would you like to achieve?`, true);
+learningStep = 2;
+break;
+
+case 2: // Get goals
+userProfile.goals.push(userInput);
+speak(`Thank you for sharing your goals. Is there anything specific I can help you with right now?`, true);
+learningStep = 3;
+break;
+
+case 3: // Get immediate needs
+if (lowerInput.includes('search') || lowerInput.includes('find') || lowerInput.includes('look up') || lowerInput.includes('?')) {
+// User wants to search - handle the search
+handleDiscussion(userInput);
+} else {
+speak(`Thank you for sharing! I'm here whenever you need help. What would you like to do next? You can ask me questions, search for information, or we can continue our conversation.`, true);
+learningStep = 4;
+}
+break;
+
+case 4: // Continue conversation
+// Now use the learned profile to provide personalized responses
+if (userProfile.interests.length > 0) {
+const interest = userProfile.interests[0];
+if (lowerInput.includes(interest) || lowerInput.includes('more about') || lowerInput.includes('tell me')) {
+// Search for information about their interest
+handleDiscussion(`latest information about ${interest}`);
+return;
+}
+}
+// Default: ask what they need
+speak(`Based on what you've shared, I can help you with ${userProfile.interests.join(', ') || 'various topics'}. What would you like to know more about?`, true);
+break;
+}
+
+updateStatus('🧠 Learning: Step ' + (learningStep + 1) + '/5');
 }
 
 // ==================== VOICE SYSTEM ====================
@@ -981,118 +1050,30 @@ speak('Sorry, could not search right now.', true);
 }
 }
 
-// ==================== WHATSAPP FUNCTIONALITY ====================
-function sendToWhatsApp(phoneNumber) {
-if (searchResults.length === 0) {
-speak('No search results to send.');
-waitingForPhoneNumber = false;
-phoneNumberAttemptCount = 0;
-return;
-}
-
-// Clean phone number - remove ALL non-digits
-let cleanNumber = phoneNumber.replace(/\D/g, '');
-console.log('Original number:', phoneNumber);
-console.log('Cleaned number:', cleanNumber);
-
-// Handle country code - Sri Lankan format
-if (cleanNumber.startsWith('0')) {
-cleanNumber = '94' + cleanNumber.substring(1);
-} else if (cleanNumber.length === 10 && !cleanNumber.startsWith('94')) {
-cleanNumber = '94' + cleanNumber;
-}
-
-// Validate length (11-13 digits with country code)
-if (cleanNumber.length < 11 || cleanNumber.length > 15) {
-speak(`Number seems invalid. I heard ${cleanNumber.length} digits. Please try again with country code like 94771234567`);
-waitingForPhoneNumber = false;
-phoneNumberAttemptCount = 0;
-setTimeout(() => {
-if (conversationMode === 'continuous' || conversationMode === 'save') recognition.start();
-}, 2000);
-return;
-}
-
-// Create message
-let message = `*Anjalee Search Results*\n\n`;
-message += `*Query:* ${currentSearchQuery}\n`;
-message += `*Results:* ${searchResults.length}\n\n`;
-
-searchResults.forEach((item, i) => {
-message += `*${i+1}. ${item.title}*\n`;
-message += `Price: ${item.price}\n`;
-message += `Location: ${item.location}\n`;
-message += `URL: ${item.fullUrl}\n\n`;
-});
-
-// Create WhatsApp URL
-const whatsappURL = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
-console.log('WhatsApp URL:', whatsappURL);
-
-// Open WhatsApp
-const newWindow = window.open(whatsappURL, '_blank');
-
-if (newWindow) {
-speak(`Opening WhatsApp to send to ${phoneNumber}. Please complete the send in WhatsApp.`, true);
-updateStatus('✅ WhatsApp opened!');
-} else {
-window.location.href = whatsappURL;
-speak(`WhatsApp opened. Please complete the send.`, true);
-}
-
-// Reset flags
-waitingForPhoneNumber = false;
-phoneNumberAttemptCount = 0;
-
-setTimeout(() => {
-if ((conversationMode === 'continuous' || conversationMode === 'save') && recognition) {
-try {
-recognition.start();
-} catch(e) {}
-}
-}, 5000);
-}
-
-function promptWhatsApp() {
-if (searchResults.length === 0) {
-speak('No search results to send. Please search first.');
-return;
-}
-waitingForPhoneNumber = true;
-phoneNumberAttemptCount = 0;
-speak('Please say your WhatsApp mobile number. For example: zero seven seven one two three four five six seven, or nine four seven seven one two three four five six seven');
-updateStatus('📱 Say your WhatsApp number');
-
-if (recognition) {
-recognition.stop();
-setTimeout(() => {
-try {
-recognition.start();
-console.log('✅ Mic restarted for phone number');
-} catch(e) {
-console.log('Mic restart error:', e);
-}
-}, 1500);
-}
-}
-
-// ==================== DISCUSSION MODE - INTELLIGENT CONVERSATION ====================
+// ==================== DISCUSSION MODE - INTELLIGENT ====================
 async function handleDiscussion(userInput) {
 const lowerInput = userInput.toLowerCase();
 
 console.log('💬 Discussion input:', userInput);
+
+// Check if this question was already answered (prevent repeats)
+if (lowerInput === lastAnsweredQuestion.toLowerCase()) {
+speak('I already answered that question. Would you like to ask something different?', true);
+return;
+}
 
 // Check for explicit search requests - THESE TRIGGER INTERNET SEARCH
 const searchTriggers = [
 'search for', 'find', 'look up', 'google', 'what is', 'who is', 
 'where is', 'how to', 'show me', 'tell me about', 'information about',
 'news about', 'latest', 'current', 'recent', 'explain', 'define',
-'when', 'why', 'which', 'can you', 'do you know'
+'when', 'why', 'which', 'can you', 'do you know', 'give me',
+'list', 'describe', 'summarize'
 ];
 
 const wantsSearch = searchTriggers.some(trigger => lowerInput.includes(trigger));
 
-if (wantsSearch) {
+if (wantsSearch || lowerInput.includes('?')) {
 // Search the internet and provide answer
 updateStatus('💬 Searching internet...');
 console.log('🔍 Searching for:', userInput);
@@ -1114,7 +1095,7 @@ if (data.organic && data.organic.length > 0) {
 const result = data.organic[0];
 const answer = `${result.title}. ${result.snippet}`;
 speak(answer, true);
-lastQuestionAnswered = answer;
+lastAnsweredQuestion = userInput;
 updateStatus('💬 Ready for next question');
 console.log('✅ Found answer:', answer);
 } else {
@@ -1150,41 +1131,10 @@ break;
 }
 
 if (!responded) {
-// If it's a question but doesn't have search triggers, still search
-if (lowerInput.includes('?') || lowerInput.includes('what') || lowerInput.includes('how') || lowerInput.includes('why') || lowerInput.includes('when') || lowerInput.includes('who')) {
-// It's a question - search for it
-updateStatus('💬 Searching internet...');
-try {
-const response = await fetch('https://google.serper.dev/search', {
-method: 'POST',
-headers: {
-'X-API-KEY': AppState.getApiKey(),
-'Content-Type': 'application/json'
-},
-body: JSON.stringify({ q: userInput, num: 3 })
-});
-
-if (!response.ok) throw new Error('API error');
-const data = await response.json();
-
-if (data.organic && data.organic.length > 0) {
-const result = data.organic[0];
-const answer = `${result.title}. ${result.snippet}`;
-speak(answer, true);
-lastQuestionAnswered = answer;
-updateStatus('💬 Ready for next question');
-} else {
-speak('I could not find information about that.', true);
-}
-} catch (error) {
-speak('Sorry, I could not search right now.', true);
-}
-} else {
-// Not a question - acknowledge and invite questions
-const followUp = 'I understand. Feel free to ask me any question - I\'ll search the internet and find the answer for you!';
+// Not a clear question - invite them to ask
+const followUp = 'I\'m ready to help! Just ask me a question using words like "what is", "how to", "tell me about", or "search for".';
 speak(followUp, true);
 console.log('✅ Follow-up response:', followUp);
-}
 }
 
 updateStatus('💬 Listening...');
@@ -1243,12 +1193,10 @@ updateStatus('🎤 Dictation - Say "Start dictating"');
 updateStatus('📝 Dictating...');
 }
 } else if (conversationMode === 'discussion') {
-updateStatus('💬 Discussion mode - Ask questions');
-} else if (conversationMode === 'continuous' || conversationMode === 'save') {
-if (waitingForPhoneNumber) {
-updateStatus('📱 Say your WhatsApp number');
+if (isLearning) {
+updateStatus('🧠 Learning mode - Answer my questions');
 } else {
-updateStatus('🎤 Listening... Speak now!');
+updateStatus('💬 Discussion mode - Ask questions');
 }
 } else {
 updateStatus('🎤 Listening... Speak now!');
@@ -1263,9 +1211,9 @@ isListening = false;
 document.getElementById('micBtn').classList.remove('listening');
 
 // Auto-restart based on mode
-if (conversationMode === 'continuous' && !isExplaining && !processLock && !isSpeaking && !waitingForPhoneNumber) {
+if (conversationMode === 'continuous' && !isExplaining && !processLock && !isSpeaking) {
 setTimeout(() => {
-if (!isListening && !isSpeaking && conversationMode === 'continuous' && !isExplaining && !waitingForPhoneNumber) {
+if (!isListening && !isSpeaking && conversationMode === 'continuous' && !isExplaining) {
 try {
 recognition.start();
 console.log('✅ Mic auto-restarted');
@@ -1274,8 +1222,6 @@ console.log('Auto-restart failed:', e.message);
 }
 }
 }, 1000);
-} else if (conversationMode === 'save' && !waitingForPhoneNumber && !waitingForYes) {
-// Don't auto-restart in save mode unless waiting for response
 } else if (conversationMode === 'dictation') {
 // Always keep listening in dictation mode
 setTimeout(() => {
@@ -1311,46 +1257,29 @@ handleDictation(text);
 return;
 }
 
-// Handle discussion mode SECOND
+// Handle discussion/learn mode SECOND
 if (conversationMode === 'discussion') {
+// Check for stop during explanation
+if (isExplaining && (text.toLowerCase().includes('stop') || text.toLowerCase().includes('stop explaining'))) {
+stopExplaining();
+return;
+}
+
+// Check for Learn button activation by voice
+if (text.toLowerCase().includes('learn') || text.toLowerCase().includes('start learning') || text.toLowerCase().includes('teach me')) {
+startLearnMode();
+return;
+}
+
+// Handle Learn mode if active
+if (isLearning) {
+handleLearnMode(text);
+return;
+}
+
+// Handle normal discussion
 handleDiscussion(text);
 return;
-}
-
-// Handle WhatsApp phone number for continuous and save modes
-if (waitingForPhoneNumber && (conversationMode === 'continuous' || conversationMode === 'save')) {
-console.log('📱 Processing phone number. Attempt:', phoneNumberAttemptCount + 1);
-
-// Extract digits only
-const digitsOnly = text.replace(/\D/g, '');
-console.log('Digits extracted:', digitsOnly, 'Length:', digitsOnly.length);
-
-// Validate: must be 10-15 digits
-if (digitsOnly.length >= 10 && digitsOnly.length <= 15) {
-console.log('✅ Valid number captured:', digitsOnly);
-sendToWhatsApp(digitsOnly);
-return;
-} else if (digitsOnly.length >= 5) {
-phoneNumberAttemptCount++;
-if (phoneNumberAttemptCount >= 3) {
-speak('Let me try a different approach. Please tap the WhatsApp button on the result instead.');
-waitingForPhoneNumber = false;
-phoneNumberAttemptCount = 0;
-return;
-}
-speak(`I heard ${digitsOnly.length} digits. Please say the complete number with country code, like 94771234567`);
-return;
-} else {
-phoneNumberAttemptCount++;
-if (phoneNumberAttemptCount >= 3) {
-speak('Please tap the green WhatsApp button on the search result instead.');
-waitingForPhoneNumber = false;
-phoneNumberAttemptCount = 0;
-return;
-}
-speak('I did not hear numbers clearly. Please say digits like: nine four seven seven one two three four five six seven');
-return;
-}
 }
 
 // Handle other modes
@@ -1383,13 +1312,6 @@ document.getElementById('userText').textContent = text;
 document.getElementById('userMsg').classList.add('show');
 
 const lower = text.toLowerCase();
-
-// WhatsApp command for continuous and save modes
-if ((conversationMode === 'continuous' || conversationMode === 'save') && (lower.includes('whatsapp') || lower.includes('send to whatsapp'))) {
-promptWhatsApp();
-isProcessing = false;
-return;
-}
 
 if (lower.includes('stop') || lower.includes('goodbye') || lower.includes('bye')) {
 speak('Goodbye!', true);
@@ -1474,7 +1396,7 @@ console.log('✅ Recognition initialized');
 function handleDictation(text) {
 const lower = text.toLowerCase();
 
-console.log('📝 Dictation processing:', text, 'enrollmentMode:', enrollmentMode, 'isDictating:', isDictating, 'enrollmentCount:', enrollmentCount);
+console.log('📝 Dictation processing:', text, 'enrollmentMode:', enrollmentMode, 'isDictating:', isDictating);
 
 // Check for speaker identification (continue until "start dictating")
 if (enrollmentMode && lower.includes('i am')) {
@@ -1484,30 +1406,26 @@ const name = nameMatch[1].trim();
 if (name && name.length > 1) {
 currentSpeaker = name;
 speakers[name] = true;
-enrollmentCount++;
-speak(`Welcome, ${name}. You can identify more speakers or say "Start dictating" when ready.`, true);
-updateStatus(`👤 Speaker ${enrollmentCount} identified: ${name} - Say "Start dictating" when ready`);
-console.log('✅ Speaker enrolled:', name, 'Count:', enrollmentCount);
+enrollmentMode = false; // CRITICAL FIX: Set enrollmentMode to false after first identification
+speak(`Welcome, ${name}. Say "Start dictating" when ready to begin.`, true);
+updateStatus(`👤 Speaker identified: ${name} - Say "Start dictating"`);
+console.log('✅ Speaker enrolled:', name, 'enrollmentMode set to false');
 }
 }
 isProcessing = false;
 return;
 }
 
-// Check for start commands - THIS IS THE KEY FIX
+// Check for start commands - CRITICAL FIX
 if (lower.includes('start dictating') || lower.includes('start typing')) {
-console.log('🎯 Start command detected');
-if (!isDictating) {
+console.log('🎯 Start command detected - switching to dictation mode');
+// Set dictation mode FIRST before any other processing
 isDictating = true;
-enrollmentMode = false; // Stop enrollment, start dictating
-speak('Dictation started. Speak your text. Say "new paragraph" for a new paragraph. Say "stop" when done.', true);
+speak('Dictation started. Speak your text now. Say "new paragraph" for a new paragraph. Say "stop" when done.', true);
 updateStatus('📝 Dictating...');
-console.log('✅ Dictation started');
-} else {
-speak('Already dictating. Continue speaking.', true);
-}
+console.log('✅ Dictation mode activated');
 isProcessing = false;
-return;
+return; // EXIT IMMEDIATELY - don't process this text
 }
 
 // Only process dictation if actively dictating
@@ -1520,7 +1438,7 @@ return;
 // Check for stop commands
 if (lower.includes('stop') || lower.includes('end') || lower.includes('end typing') || lower.includes('end of dictating')) {
 isDictating = false;
-speak('Dictation stopped. You can export or send via WhatsApp.', true);
+speak('Dictation stopped. You can export your document.', true);
 updateStatus('✅ Dictation stopped');
 console.log('✅ Dictation stopped');
 isProcessing = false;
@@ -1535,8 +1453,8 @@ isProcessing = false;
 return;
 }
 
-// Add to dictation if text is meaningful
-if (text.length > 2) {
+// Add to dictation if text is meaningful (and not a command)
+if (text.length > 2 && !lower.includes('start') && !lower.includes('stop')) {
 addToDictation(text, currentSpeaker);
 console.log('✅ Added to dictation:', text);
 }
@@ -1577,7 +1495,7 @@ else if (text.includes('Searching')) bar.classList.add('searching');
 else if (text.includes('ready') || text.includes('Ready') || text.includes('Tap')) bar.classList.add('ready');
 else if (text.includes('Dictating') || text.includes('dictation')) bar.classList.add('dictating');
 else if (text.includes('Discussion') || text.includes('discussing')) bar.classList.add('discussing');
-else if (text.includes('WhatsApp')) bar.classList.add('whatsapp');
+else if (text.includes('Learning') || text.includes('learning')) bar.classList.add('learning');
 }
 
 async function doSearch(query) {
@@ -1671,7 +1589,7 @@ country: countryNames[country]
 
 showResults();
 
-const msg = `I found ${searchResults.length} results for ${query} in ${countryNames[country]}. You can say "send to WhatsApp" to share results.`;
+const msg = 'Found ' + searchResults.length + ' results in ' + countryNames[country] + '.';
 document.getElementById('assistText').textContent = msg;
 document.getElementById('assistMsg').classList.add('show');
 
@@ -1680,7 +1598,7 @@ speak(msg, true);
 if (conversationMode === 'continuous') {
 updateStatus('✅ Done! Keep talking!');
 setTimeout(() => {
-if (!isListening && conversationMode === 'continuous' && !isExplaining && !waitingForPhoneNumber) {
+if (!isListening && conversationMode === 'continuous' && !isExplaining) {
 try { recognition.start(); } catch(e) {}
 }
 }, 2000);
@@ -1721,9 +1639,6 @@ ${item.features.map(f => `<span style="background:#dbeafe;color:#1e40af;padding:
 <button class="explain-btn" id="explainBtn-${i}" onclick="explainResult(${i})">
 <i class="fas fa-volume-up"></i> Explain Details
 </button>
-<button class="whatsapp-btn" onclick="promptWhatsApp()">
-<i class="fab fa-whatsapp"></i> Send to WhatsApp
-</button>
 </div>
 `).join('');
 document.getElementById('results').style.display = 'block';
@@ -1736,14 +1651,12 @@ document.getElementById('assistMsg').classList.remove('show');
 searchResults = [];
 pendingQuery = '';
 waitingForYes = false;
-waitingForPhoneNumber = false;
-phoneNumberAttemptCount = 0;
 isProcessing = false;
 isExplaining = false;
 currentExplainingItem = null;
 updateStatus('🎤 Ready - Keep talking!');
 setTimeout(() => {
-if (!isListening && conversationMode === 'continuous' && !waitingForPhoneNumber) {
+if (!isListening && conversationMode === 'continuous') {
 try { recognition.start(); } catch(e) {}
 }
 }, 500);

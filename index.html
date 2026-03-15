@@ -559,9 +559,9 @@ goals: [],
 preferences: {},
 context: []
 };
-let lastAnsweredQuestion = '';
-let questionAsked = false;
 let conversationContext = [];
+let lastTopic = '';
+let questionAsked = false;
 
 window.onload = function() {
 console.log('=== Anjalee Voice Assistant ===');
@@ -682,10 +682,10 @@ info.innerHTML = '<strong>💬 Discussion Mode:</strong> Ask me anything! Click 
 dictationSection.style.display = 'none';
 learnBtnContainer.style.display = 'block';
 isLearning = false;
-lastAnsweredQuestion = '';
+lastTopic = '';
 questionAsked = false;
 if (!questionAsked) {
-speak('Hello! Ask me anything.', true);
+speak('Hello! What\'s on your mind?', true);
 questionAsked = true;
 }
 updateStatus('💬 Discussion - Ask me anything');
@@ -817,6 +817,7 @@ setMode('discussion');
 isLearning = true;
 userProfile = { name: '', interests: [], goals: [], preferences: {}, context: [] };
 conversationContext = [];
+lastTopic = '';
 
 speak('Great! Let\'s get to know each other. Tell me about yourself.', true);
 updateStatus('🧠 Learning about you...');
@@ -887,7 +888,7 @@ function generateIntelligentResponse(input) {
 const lower = input.toLowerCase();
 
 // If user shared name
-if (userProfile.name && lower.includes('my name is') || lower.includes('i am')) {
+if (userProfile.name && (lower.includes('my name is') || lower.includes('i am'))) {
 return `Nice to meet you, ${userProfile.name}! What would you like to talk about?`;
 }
 
@@ -1107,11 +1108,8 @@ const lowerInput = userInput.toLowerCase();
 
 console.log('💬 Discussion input:', userInput);
 
-// Check if this question was already answered (prevent repeats)
-if (lowerInput === lastAnsweredQuestion.toLowerCase()) {
-speak('I already answered that. What else would you like to know?', true);
-return;
-}
+// DO NOT check for repeats - allow deeper conversation
+// Removed the "already answered that question" restriction
 
 // Check for explicit search requests
 const searchTriggers = [
@@ -1124,7 +1122,7 @@ const searchTriggers = [
 const wantsSearch = searchTriggers.some(trigger => lowerInput.includes(trigger));
 
 if (wantsSearch || lowerInput.includes('?')) {
-// Search silently and provide answer naturally
+// Search silently and provide answer naturally - ALLOW DEEPER QUESTIONS
 console.log('🔍 Searching for:', userInput);
 
 try {
@@ -1145,7 +1143,9 @@ const result = data.organic[0];
 // Just give the answer naturally - no "I found" or "I searched"
 const answer = `${result.snippet}`;
 speak(answer, true);
-lastAnsweredQuestion = userInput;
+// Track topic for context but don't block repeats
+lastTopic = userInput;
+conversationContext.push({ topic: userInput, timestamp: Date.now() });
 console.log('✅ Answered:', answer);
 } else {
 speak('I\'m not sure about that. Can you ask differently?', true);
@@ -1155,34 +1155,52 @@ speak('Let me think about that.', true);
 console.log('❌ Search error:', error);
 }
 } else {
-// Natural conversation
-const responses = {
-'hello': 'Hello! What\'s on your mind?',
-'hi': 'Hi! How can I help?',
-'hey': 'Hey! What\'s up?',
-'thank': 'You\'re welcome!',
-'thanks': 'Anytime!',
-'how are you': 'I\'m great! Ready to help you.',
-'bye': 'Take care!',
-'goodbye': 'See you later!'
-};
-
-let responded = false;
-for (const [key, response] of Object.entries(responses)) {
-if (lowerInput.includes(key)) {
-speak(response, true);
-responded = true;
-break;
-}
-}
-
-if (!responded) {
-// Natural follow-up
-speak('Tell me more about that.', true);
-}
+// Natural conversation - AI screening to understand user's mind
+const screeningResponse = screenUserIntent(userInput);
+speak(screeningResponse, true);
+conversationContext.push({ input: userInput, timestamp: Date.now() });
 }
 
 updateStatus('💬 Conversation');
+}
+
+// AI Screening - Understand what's in user's mind
+function screenUserIntent(input) {
+const lower = input.toLowerCase();
+
+// Detect emotions and respond empathetically
+if (lower.includes('worried') || lower.includes('concerned') || lower.includes('anxious')) {
+return `I understand you're concerned. Tell me more about what's on your mind. I'm here to help.`;
+}
+
+if (lower.includes('excited') || lower.includes('happy') || lower.includes('great')) {
+return `That's wonderful! I'd love to hear more about what's making you excited.`;
+}
+
+if (lower.includes('confused') || lower.includes('don\'t understand') || lower.includes('unclear')) {
+return `Let me help clarify things. What specifically is confusing? Let's work through it together.`;
+}
+
+// Detect curiosity and encourage deeper exploration
+if (lower.includes('wonder') || lower.includes('curious') || lower.includes('interested')) {
+return `That's a great thing to be curious about! What specifically would you like to explore?`;
+}
+
+// Detect goals and offer support
+if (lower.includes('want to') || lower.includes('need to') || lower.includes('trying to')) {
+return `I hear you. What's your goal here? I can help you work towards it.`;
+}
+
+// Default friendly response that encourages deeper conversation
+const followUps = [
+`Tell me more about that.`,
+`What else is on your mind?`,
+`I'm listening. Go on.`,
+`That's interesting. What do you think about it?`,
+`Help me understand more about your perspective.`
+];
+
+return followUps[Math.floor(Math.random() * followUps.length)];
 }
 
 // ==================== MIC SYSTEM ====================
@@ -1494,7 +1512,7 @@ isProcessing = false;
 return;
 }
 
-// Add text to dictation
+// Add text to dictation - THIS IS THE KEY FIX
 if (text.length > 2) {
 addToDictation(text, currentSpeaker);
 console.log('✅ Added:', text);

@@ -107,7 +107,6 @@ animation: pulse 1.5s infinite;
 .status.searching { background: #eff6ff; color: #2563eb; }
 .status.ready { background: #f0fdf4; color: #059669; border: 2px solid #10b981; }
 .status.dictating { background: #fef3c7; color: #92400e; border: 2px solid #f59e0b; }
-.status.discussing { background: #dbeafe; color: #1e40af; border: 2px solid #3b82f6; }
 @keyframes pulse {
 0%, 100% { opacity: 1; }
 50% { opacity: 0.7; }
@@ -350,6 +349,7 @@ h1 { font-size: 1.8em; }
 <p style="font-size:1em;opacity:0.95;">Professional Voice Assistant</p>
 <div class="developer-credit"><strong>Developer:</strong> Pesala S. Jayawardene</div>
 </div>
+<!-- Status Bar - Shows what's saved -->
 <div class="status-bar" id="statusBar">
 <i class="fas fa-check-circle"></i> <span id="statusBarText">Checking saved data...</span>
 </div>
@@ -390,9 +390,6 @@ h1 { font-size: 1.8em; }
 </button>
 <button class="mode-btn" id="saveMode" onclick="setMode('save')">
 <i class="fas fa-save"></i> Save Mode
-</button>
-<button class="mode-btn" id="discussionMode" onclick="setMode('discussion')">
-<i class="fas fa-comments"></i> Discussion
 </button>
 <button class="mode-btn" id="dictationMode" onclick="setMode('dictation')">
 <i class="fas fa-keyboard"></i> Dictation
@@ -471,7 +468,7 @@ h1 { font-size: 1.8em; }
 <li><strong>Click Microphone:</strong> Allow permission when asked (ONE TIME ONLY)</li>
 <li><strong>Start Talking:</strong> Say what you're looking for</li>
 <li><strong>Results Appear:</strong> With images, prices, and contact details</li>
-<li><strong>Dictation:</strong> Click Dictation mode, say "Start dictating", speak your text</li>
+<li><strong>Dictation:</strong> Click Dictation mode, say "I am [name]", then "Start dictating"</li>
 </ol>
 <p style="margin-top:15px;padding:15px;background:#fef3c7;border-radius:8px;color:#92400e;">
 <strong>✅ API Key:</strong> Saved permanently in your browser<br>
@@ -479,13 +476,12 @@ h1 { font-size: 1.8em; }
 <strong>✅ Mic Permission:</strong> Granted once, saved forever<br>
 <strong>📱 Samsung/Chrome:</strong> Fully supported<br>
 <strong>📝 Dictation:</strong> Multi-speaker support with voice recognition<br>
-<strong>🧠 AI Intelligence:</strong> Provides accurate, focused answers<br>
 <strong>Developer:</strong> Pesala S. Jayawardene
 </p>
 </div>
 </div>
 <script>
-// ==================== STATE MANAGEMENT ====================
+// ==================== FIXED STATE MANAGEMENT ====================
 const AppState = {
 getApiKey: function() {
 return localStorage.getItem('anjalee_apiKey') || '';
@@ -520,11 +516,6 @@ let currentSpeaker = 'Unknown';
 let speakers = {};
 let dictationText = '';
 let enrollmentDone = false;
-
-// Discussion/AI variables
-let conversationContext = [];
-let userIntent = null;
-let lastSearchQuery = '';
 
 window.onload = function() {
 console.log('=== Anjalee Voice Assistant ===');
@@ -595,7 +586,7 @@ document.getElementById('apiKey').value = apiKey;
 document.getElementById('setupBox').style.display = 'none';
 document.getElementById('mainApp').style.display = 'block';
 initRecognition();
-speak('Hello! I\'m ready to help. What would you like to do?', true);
+speak('Hello! API key loaded. Tap the microphone button to start.', true);
 updateStatus('🎤 Tap microphone to start');
 } else {
 document.getElementById('setupBox').style.display = 'block';
@@ -623,7 +614,6 @@ AppState.setMode(mode);
 
 document.getElementById('continuousMode').classList.toggle('active', mode === 'continuous');
 document.getElementById('saveMode').classList.toggle('active', mode === 'save');
-document.getElementById('discussionMode').classList.toggle('active', mode === 'discussion');
 document.getElementById('dictationMode').classList.toggle('active', mode === 'dictation');
 
 const info = document.getElementById('modeInfo');
@@ -635,14 +625,8 @@ dictationSection.style.display = 'none';
 } else if (mode === 'save') {
 info.innerHTML = '<strong>💾 Save Mode:</strong> Say "Anjalee" before each search.';
 dictationSection.style.display = 'none';
-} else if (mode === 'discussion') {
-info.innerHTML = '<strong>💬 Discussion Mode:</strong> Ask me anything. I\'ll search and provide accurate answers.';
-dictationSection.style.display = 'none';
-conversationContext = [];
-speak('Hello! What would you like to know?', true);
-updateStatus('💬 Discussion - Ask me anything');
-} else {
-info.innerHTML = '<strong>📝 Dictation Mode:</strong> Say "I am" followed by your name. Say "Start dictating" when ready.';
+} else if (mode === 'dictation') {
+info.innerHTML = '<strong>📝 Dictation Mode:</strong> Say "I am [name]", then "Start dictating".';
 dictationSection.style.display = 'block';
 enrollmentDone = false;
 isDictating = false;
@@ -680,7 +664,7 @@ conversationMode = AppState.getMode();
 setMode(conversationMode);
 
 initRecognition();
-speak('API key saved! I\'m ready to help. What would you like to do?', true);
+speak('API key saved! Tap microphone to start.', true);
 updateStatus('✅ API key saved! Tap microphone');
 updateStatusBar();
 }, 1500);
@@ -734,7 +718,7 @@ speak('Document exported successfully.', true);
 }
 
 function addToDictation(text, speaker) {
-console.log('📝 addToDictation called:', { text, speaker, currentDictationText: dictationText });
+console.log('📝 addToDictation called:', { text, speaker });
 
 if (dictationText === 'Dictated text will appear here...') {
 dictationText = '';
@@ -766,145 +750,6 @@ dictationArea.scrollTop = dictationArea.scrollHeight;
 }
 
 console.log('✅ Added to dictation:', speaker, '-', text);
-console.log('✅ Current dictationText length:', dictationText.length);
-}
-
-// ==================== AI INTELLIGENCE ENGINE ====================
-function analyzeUserIntent(input) {
-const lower = input.toLowerCase();
-
-// Detect question - anything with question words or ending with ?
-if (lower.includes('?') || 
-    lower.includes('where') || 
-    lower.includes('what') || 
-    lower.includes('how') || 
-    lower.includes('when') || 
-    lower.includes('why') || 
-    lower.includes('who') ||
-    lower.includes('which') ||
-    lower.includes('can you') ||
-    lower.includes('tell me') ||
-    lower.includes('show me') ||
-    lower.includes('i need') ||
-    lower.includes('i want')) {
-return { type: 'question', confidence: 0.9 };
-}
-
-// Detect request for information
-if (lower.includes('search') || lower.includes('find') || lower.includes('look up') || lower.includes('check')) {
-return { type: 'information', confidence: 0.8 };
-}
-
-// Detect suggestion request
-if (lower.includes('suggest') || lower.includes('recommend') || lower.includes('ideas')) {
-return { type: 'suggestion', confidence: 0.8 };
-}
-
-// Detect solution request
-if (lower.includes('solution') || lower.includes('solve') || lower.includes('fix') || lower.includes('help')) {
-return { type: 'solution', confidence: 0.8 };
-}
-
-// Default: search anyway for better answers
-return { type: 'question', confidence: 0.7 };
-}
-
-async function generateIntelligentResponse(input, intent) {
-const lower = input.toLowerCase();
-const country = document.getElementById('country').value;
-const countryName = countryNames[country] || 'Sri Lanka';
-
-console.log('🌍 Selected country:', countryName);
-
-// For ALL questions and information requests - ALWAYS search internet WITH COUNTRY CONTEXT
-if (intent.type === 'question' || intent.type === 'information' || intent.type === 'suggestion' || intent.type === 'solution') {
-// Build search query WITH country context - IMPROVED LOGIC
-let searchQuery = input;
-
-// Check if user is asking about photography/locations/travel
-const isPhotographyQuery = lower.includes('picture') || lower.includes('photograph') || lower.includes('photo') || lower.includes('camera');
-const isTravelQuery = lower.includes('go to') || lower.includes('visit') || lower.includes('travel') || lower.includes('tour');
-const isLocationQuery = lower.includes('where') || lower.includes('place') || lower.includes('location') || lower.includes('spot');
-
-// If it's about photography/travel/locations, search for those specific things
-if (isPhotographyQuery || isTravelQuery || isLocationQuery) {
-// Don't add generic "in [country]" if user already mentioned a specific place
-if (!lower.includes('anuradhapura') && !lower.includes('colombo') && !lower.includes('kandy')) {
-if (!lower.includes(countryName.toLowerCase()) && 
-    !lower.includes('usa') && 
-    !lower.includes('united states') &&
-    !lower.includes('uk') &&
-    !lower.includes('united kingdom')) {
-searchQuery = input + ' in ' + countryName;
-}
-}
-// If user mentioned a specific place, use that
-else if (lower.includes('anuradhapura')) {
-searchQuery = input.replace('anuradhapura', 'Anuradhapura Sri Lanka');
-}
-} else {
-// For other queries, add country context if not already mentioned
-if (!lower.includes(countryName.toLowerCase()) && 
-    !lower.includes('usa') && 
-    !lower.includes('united states') &&
-    !lower.includes('uk') &&
-    !lower.includes('united kingdom')) {
-searchQuery = input + ' in ' + countryName;
-}
-}
-
-console.log('🔍 Searching for:', searchQuery);
-await searchAndProvideAnswer(searchQuery, true); // true = short answer mode
-return;
-}
-
-// Default: still search for better answers
-await searchAndProvideAnswer(input, true);
-}
-
-async function searchAndProvideAnswer(query, shortAnswer = false) {
-console.log('🔍 Searching for:', query);
-updateStatus('🔍 Searching for accurate answer...');
-
-try {
-const response = await fetch('https://google.serper.dev/search', {
-method: 'POST',
-headers: {
-'X-API-KEY': AppState.getApiKey(),
-'Content-Type': 'application/json'
-},
-body: JSON.stringify({ q: query, num: 3 })
-});
-
-if (!response.ok) throw new Error('API error: ' + response.status);
-const data = await response.json();
-
-if (data.organic && data.organic.length > 0) {
-// Get the first result for short answer
-const firstResult = data.organic[0];
-let answer = firstResult.snippet;
-
-// If user wants short answer, just give the first snippet
-if (shortAnswer) {
-speak(answer, true);
-} else {
-// Combine top results for comprehensive answer
-const answers = data.organic.slice(0, 3).map(r => r.snippet).join('. ');
-speak(answers, true);
-}
-
-lastSearchQuery = query;
-conversationContext.push({ query: query, answer: answer, timestamp: Date.now() });
-console.log('✅ Answered:', answer.substring(0, 100) + '...');
-} else {
-speak('I couldn\'t find specific information on that. Could you rephrase your question?', true);
-}
-} catch (error) {
-console.error('❌ Search error:', error);
-speak('I\'m having trouble accessing information right now. Please try again.', true);
-}
-
-updateStatus('💬 Ready for next question');
 }
 
 // ==================== VOICE SYSTEM ====================
@@ -1080,48 +925,14 @@ const data = await response.json();
 
 if (data.organic && data.organic.length > 0) {
 const snippet = data.organic[0].snippet;
-speak(`${snippet.substring(0, 200)}.`, true);
+speak(`I found: ${snippet.substring(0, 200)}.`, true);
 } else {
-speak('I couldn\'t find that information.', true);
+speak('Could not find that information.', true);
 }
 
 } catch (error) {
-speak('Let me think about that differently.', true);
+speak('Sorry, could not search right now.', true);
 }
-}
-
-// ==================== DISCUSSION MODE - AI INTELLIGENT ====================
-async function handleDiscussion(userInput) {
-const lowerInput = userInput.toLowerCase();
-
-console.log('💬 Discussion input:', userInput);
-
-// Check if user wants more details
-if (lowerInput.includes('more details') || lowerInput.includes('more information') || lowerInput.includes('tell me more') || lowerInput.includes('explain more')) {
-// Provide detailed answer for last search
-if (lastSearchQuery) {
-console.log('🔍 Providing detailed answer for:', lastSearchQuery);
-await searchAndProvideAnswer(lastSearchQuery, false); // false = detailed mode
-return;
-}
-}
-
-// Analyze user intent with AI
-userIntent = analyzeUserIntent(userInput);
-console.log('🧠 Detected intent:', userIntent);
-
-// Save to conversation context
-conversationContext.push({
-input: userInput,
-intent: userIntent,
-timestamp: Date.now()
-});
-if (conversationContext.length > 30) conversationContext.shift();
-
-// Generate and speak intelligent response
-await generateIntelligentResponse(userInput, userIntent);
-
-updateStatus('💬 AI Conversation');
 }
 
 // ==================== MIC SYSTEM ====================
@@ -1175,10 +986,8 @@ updateStatus('🎤 Say "Start dictating" to begin');
 } else {
 updateStatus('📝 Dictating...');
 }
-} else if (conversationMode === 'discussion') {
-updateStatus('💬 AI ready - Ask me anything');
 } else {
-updateStatus('🎤 Listening...');
+updateStatus('🎤 Listening... Speak now!');
 }
 
 document.getElementById('micBtn').classList.add('listening');
@@ -1189,7 +998,6 @@ console.log('❌ Recognition ended');
 isListening = false;
 document.getElementById('micBtn').classList.remove('listening');
 
-// Auto-restart based on mode
 if (conversationMode === 'continuous' && !isExplaining && !processLock && !isSpeaking) {
 setTimeout(() => {
 if (!isListening && !isSpeaking && conversationMode === 'continuous' && !isExplaining) {
@@ -1210,15 +1018,6 @@ console.log('✅ Dictation mic restarted');
 } catch (e) {}
 }
 }, 1000);
-} else if (conversationMode === 'discussion') {
-setTimeout(() => {
-if (!isListening) {
-try {
-recognition.start();
-console.log('✅ Discussion mic restarted');
-} catch (e) {}
-}
-}, 1000);
 }
 };
 
@@ -1231,19 +1030,6 @@ console.log('🎤 Heard:', text);
 // Handle dictation mode FIRST
 if (conversationMode === 'dictation') {
 handleDictation(text);
-return;
-}
-
-// Handle discussion mode SECOND
-if (conversationMode === 'discussion') {
-// Check for stop during explanation
-if (isExplaining && (text.toLowerCase().includes('stop') || text.toLowerCase().includes('stop explaining'))) {
-stopExplaining();
-return;
-}
-
-// Handle discussion with AI intelligence
-handleDiscussion(text);
 return;
 }
 
@@ -1279,7 +1065,7 @@ document.getElementById('userMsg').classList.add('show');
 const lower = text.toLowerCase();
 
 if (lower.includes('stop') || lower.includes('goodbye') || lower.includes('bye')) {
-speak('Goodbye! Come back anytime.', true);
+speak('Goodbye!', true);
 updateStatus('👋 Ended');
 if (isListening) recognition.stop();
 isProcessing = false;
@@ -1344,7 +1130,7 @@ console.log('❌ Error:', event.error);
 isProcessing = false;
 
 if (event.error === 'not-allowed') {
-updateStatus('❌ Mic permission denied');
+updateStatus('❌ Mic permission denied. Allow in Chrome settings.');
 } else if (event.error === 'no-speech') {
 setTimeout(() => {
 try { recognition.start(); } catch(e) {}
@@ -1440,14 +1226,14 @@ recognition.stop();
 isListening = false;
 isProcessing = false;
 document.getElementById('micBtn').classList.remove('listening');
-updateStatus('⏸️ Paused');
+updateStatus('⏸️ Paused. Tap to resume');
 } else {
 isProcessing = false;
 try {
 recognition.start();
 } catch (e) {
 console.error('Mic start error:', e);
-updateStatus('❌ Mic error');
+updateStatus('❌ Mic error. Check permissions.');
 }
 }
 }
@@ -1461,7 +1247,6 @@ else if (text.includes('Speaking')) bar.classList.add('speaking');
 else if (text.includes('Searching')) bar.classList.add('searching');
 else if (text.includes('ready') || text.includes('Ready') || text.includes('Tap')) bar.classList.add('ready');
 else if (text.includes('Dictating') || text.includes('dictation')) bar.classList.add('dictating');
-else if (text.includes('Discussion') || text.includes('discussing')) bar.classList.add('discussing');
 }
 
 async function doSearch(query) {
@@ -1555,7 +1340,7 @@ country: countryNames[country]
 
 showResults();
 
-const msg = 'Found ' + searchResults.length + ' results.';
+const msg = 'Found ' + searchResults.length + ' results in ' + countryNames[country] + '.';
 document.getElementById('assistText').textContent = msg;
 document.getElementById('assistMsg').classList.add('show');
 
@@ -1620,7 +1405,7 @@ waitingForYes = false;
 isProcessing = false;
 isExplaining = false;
 currentExplainingItem = null;
-updateStatus('🎤 Ready');
+updateStatus('🎤 Ready - Keep talking!');
 setTimeout(() => {
 if (!isListening && conversationMode === 'continuous') {
 try { recognition.start(); } catch(e) {}
@@ -1630,23 +1415,23 @@ try { recognition.start(); } catch(e) {}
 
 function saveAsWord() {
 if (!searchResults.length) { alert('No results'); return; }
-alert('Word save active');
+alert('Word save feature active');
 }
 
 function saveAsPDF() {
 if (!searchResults.length) { alert('No results'); return; }
-alert('PDF save active');
+alert('PDF save feature active');
 }
 
 function saveAsText() {
 if (!searchResults.length) { alert('No results'); return; }
-let content = `ANJALEE RESULTS\n\n`;
+let content = `ANJALEE RESULTS - ${countryNames[selectedCountry]}\n\n`;
 searchResults.forEach((r, i) => {
 content += `${i+1}. ${r.title}\nPrice: ${r.price}\nLocation: ${r.location}\nContact: ${r.contact}\nURL: ${r.fullUrl}\n\n`;
 });
 const blob = new Blob([content], { type: 'text/plain' });
 saveAs(blob, `anjalee-${Date.now()}.txt`);
-alert('✅ Saved!');
+alert('✅ Text saved!');
 }
 </script>
 </body>
